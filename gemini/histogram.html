@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据分布直方图生成器</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+            background-color: #f9f9f9;
+        }
+        h1, h2 {
+            text-align: center;
+            color: #2c3e50;
+        }
+        .control-panel {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        input[type="file"] {
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 4px;
+            width: 80%;
+        }
+        .chart-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            height: 400px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: center;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+            font-weight: 600;
+        }
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        .stats-summary {
+            margin-bottom: 15px;
+            font-size: 0.9em;
+            color: #666;
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>📊 数据分布直方图生成器</h1>
+
+    <div class="control-panel">
+        <p>请上传文本文件（.txt 或 .csv），每行一个数字</p>
+        <input type="file" id="fileInput" accept=".txt,.csv">
+        <p id="errorMsg" style="color: red; display: none; margin-top: 10px;"></p>
+    </div>
+
+    <div id="resultsArea" style="display: none;">
+        <div class="stats-summary" id="statsSummary"></div>
+
+        <div class="chart-container">
+            <canvas id="histogramChart"></canvas>
+        </div>
+
+        <h2>分布区间统计表</h2>
+        <table id="distributionTable">
+            <thead>
+                <tr>
+                    <th>区间范围 (Range)</th>
+                    <th>频数 (Count)</th>
+                    <th>频率 (Frequency %)</th>
+                </tr>
+            </thead>
+            <tbody>
+                </tbody>
+        </table>
+    </div>
+
+    <script>
+        let myChart = null;
+
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                const content = e.target.result;
+                processData(content);
+            };
+
+            reader.readAsText(file);
+        });
+
+        function processData(text) {
+            const errorMsg = document.getElementById('errorMsg');
+            const resultsArea = document.getElementById('resultsArea');
+            
+            // 1. 解析数据：按行分割，转换为数字，过滤掉非数字
+            const lines = text.split(/\r\n|\n/);
+            const data = lines
+                .map(line => parseFloat(line.trim()))
+                .filter(num => !isNaN(num));
+
+            if (data.length === 0) {
+                errorMsg.textContent = "未在文件中找到有效的数字数据，请检查文件格式。";
+                errorMsg.style.display = 'block';
+                resultsArea.style.display = 'none';
+                return;
+            }
+
+            errorMsg.style.display = 'none';
+            resultsArea.style.display = 'block';
+
+            // 2. 统计计算
+            const min = Math.min(...data);
+            const max = Math.max(...data);
+            const range = max - min;
+            const count = data.length;
+
+            // 使用平方根规则确定由多少个柱子 (Bins)
+            let binCount = Math.ceil(Math.sqrt(count));
+            if (binCount < 5) binCount = 5; // 至少5个区间
+            if (binCount > 50) binCount = 50; // 最多50个区间，防止太密集
+
+            // 处理所有数字都相同的情况
+            if (range === 0) {
+                binCount = 1;
+            }
+
+            const binWidth = range === 0 ? 1 : range / binCount;
+            
+            // 初始化 Bins
+            const bins = new Array(binCount).fill(0);
+            const binLabels = [];
+            
+            // 3. 将数据放入对应的 Bin
+            data.forEach(num => {
+                let index = Math.floor((num - min) / binWidth);
+                if (index >= binCount) index = binCount - 1; // 处理最大值边界
+                bins[index]++;
+            });
+
+            // 生成标签
+            for (let i = 0; i < binCount; i++) {
+                const start = min + (i * binWidth);
+                const end = start + binWidth;
+                // 格式化数字，保留2位小数
+                const label = `${formatNum(start)} - ${formatNum(end)}`;
+                binLabels.push(label);
+            }
+
+            // 4. 更新 UI
+            updateSummary(count, min, max, binCount);
+            renderChart(binLabels, bins);
+            renderTable(binLabels, bins, count);
+        }
+
+        function formatNum(num) {
+            // 如果是整数显示整数，否则保留2位小数
+            return Number.isInteger(num) ? num : num.toFixed(2);
+        }
+
+        function updateSummary(count, min, max, bins) {
+            document.getElementById('statsSummary').innerHTML = 
+                `数据总量: <strong>${count}</strong> | 最小值: <strong>${formatNum(min)}</strong> | 最大值: <strong>${formatNum(max)}</strong> | 区间数: <strong>${bins}</strong>`;
+        }
+
+        function renderChart(labels, data) {
+            const ctx = document.getElementById('histogramChart').getContext('2d');
+
+            // 如果之前有图表，先销毁
+            if (myChart) {
+                myChart.destroy();
+            }
+
+            myChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '频数 (Count)',
+                        data: data,
+                        backgroundColor: 'rgba(52, 152, 219, 0.6)',
+                        borderColor: 'rgba(52, 152, 219, 1)',
+                        borderWidth: 1,
+                        barPercentage: 1.0, // 让柱子紧挨着，符合直方图外观
+                        categoryPercentage: 1.0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: '频数'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: '数据区间'
+                            },
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 0
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                title: (items) => `区间: ${items[0].label}`
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderTable(labels, data, totalCount) {
+            const tbody = document.querySelector('#distributionTable tbody');
+            tbody.innerHTML = '';
+
+            data.forEach((count, index) => {
+                const percentage = ((count / totalCount) * 100).toFixed(2) + '%';
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${labels[index]}</td>
+                    <td>${count}</td>
+                    <td>${percentage}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+    </script>
+</body>
+</html>
