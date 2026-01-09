@@ -1,0 +1,492 @@
+:root {
+    --bg-color: #0f172a;
+    --card-bg: #1e293b;
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --accent-color: #38bdf8;
+    --accent-glow: rgba(56, 189, 248, 0.4);
+
+    --level-0: #1e293b;
+    --level-1: #0e4429;
+    --level-2: #006d32;
+    --level-3: #26a641;
+    --level-4: #39d353;
+
+    /* Modern Palette */
+    --level-1-v2: #164e63;
+    --level-2-v2: #0891b2;
+    --level-3-v2: #06b6d4;
+    --level-4-v2: #22d3ee;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Outfit', sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-primary);
+    display: flex;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.app-container {
+    width: 100%;
+    max-width: 480px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    padding-bottom: 120px;
+    /* Space for FAB */
+}
+
+header {
+    text-align: center;
+    margin-top: 20px;
+}
+
+h1 {
+    font-weight: 700;
+    font-size: 2rem;
+    letter-spacing: -0.02em;
+}
+
+.subtitle {
+    color: var(--text-secondary);
+    font-size: 1rem;
+    margin-top: 4px;
+}
+
+.stats-card {
+    display: flex;
+    justify-content: space-around;
+    background: var(--card-bg);
+    padding: 20px;
+    border-radius: 16px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--accent-color);
+}
+
+.stat-label {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin-top: 4px;
+}
+
+/* Cat Interaction */
+.cat-wrapper {
+    position: fixed;
+    bottom: 20%;
+    /* Default vertical position, can be randomized */
+    z-index: 200;
+    pointer-events: none;
+    /* Let clicks pass through if not on cat */
+    width: 0;
+    height: 0;
+}
+
+.cat-character {
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    cursor: pointer;
+    pointer-events: auto;
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3));
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Positioning variants */
+.cat-wrapper.pos-left {
+    left: 0;
+}
+
+.cat-wrapper.pos-right {
+    right: 0;
+}
+
+.cat-wrapper.pos-left .cat-character {
+    left: -20px;
+    /* Peek out */
+    transform: rotate(15deg);
+    /* Slight tilt */
+}
+
+.cat-wrapper.pos-left .cat-character:hover {
+    transform: translateX(10px) rotate(0deg);
+    /* Peek more on hover */
+}
+
+.cat-wrapper.pos-right .cat-character {
+    right: -20px;
+    transform: scaleX(-1) rotate(15deg);
+    /* Flip for right side */
+}
+
+.cat-wrapper.pos-right .cat-character:hover {
+    transform: scaleX(-1) translateX(10px) rotate(0deg);
+}
+
+/* Fix mirrored text on right side */
+.cat-wrapper.pos-right .cat-hint {
+    transform: scaleX(-1);
+}
+
+/* Keyframes for Shake */
+@keyframes shake-cat {
+    0% {
+        margin-left: 0;
+        margin-top: 0;
+    }
+
+    25% {
+        margin-left: -5px;
+        margin-top: 2px;
+    }
+
+    50% {
+        margin-left: 5px;
+        margin-top: -2px;
+    }
+
+    75% {
+        margin-left: -5px;
+        margin-top: 2px;
+    }
+
+    100% {
+        margin-left: 0;
+        margin-top: 0;
+    }
+}
+
+
+
+
+
+.shaking .cat-character {
+    /* We use margins to avoid conflict with transforms (flipping) */
+    animation: shake-cat 0.4s ease-in-out;
+}
+
+.cat-hint {
+    position: absolute;
+    top: -25px;
+    left: 10px;
+    background: white;
+    color: var(--bg-color);
+    padding: 4px 8px;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+    white-space: nowrap;
+}
+
+.cat-character:hover .cat-hint {
+    opacity: 1;
+}
+
+.heatmap-container {
+    background: var(--card-bg);
+    padding: 20px;
+    border-radius: 16px;
+    overflow: hidden;
+    /* Contains the heatmap */
+    flex-grow: 0;
+    height: auto;
+}
+
+/* ... header styles ... */
+
+.heatmap-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.header-left {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+}
+
+.heatmap-header h3 {
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin: 0;
+}
+
+.view-toggles {
+    display: flex;
+    gap: 4px;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.05);
+    padding: 2px 8px;
+    border-radius: 12px;
+}
+
+.toggle-option {
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.toggle-option:hover {
+    color: var(--text-primary);
+}
+
+.toggle-option.active {
+    color: var(--accent-color);
+    font-weight: 600;
+}
+
+.toggle-divider {
+    opacity: 0.3;
+}
+
+.icon-button {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-secondary);
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.icon-button:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+    border-color: var(--text-primary);
+}
+
+.legend-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+    /* Space before grid */
+}
+
+/* Legend styles moved to .legend-container, keeping .legend-scale */
+
+.legend-scale {
+    display: flex;
+    gap: 2px;
+}
+
+/* Base level styles for legend */
+.level {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+}
+
+.level-0 {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.level-1 {
+    background-color: var(--level-1-v2);
+}
+
+.level-2 {
+    background-color: var(--level-2-v2);
+}
+
+.level-3 {
+    background-color: var(--level-3-v2);
+}
+
+.level-4 {
+    background-color: var(--level-4-v2);
+}
+
+/* Main Container for Horizontal Scroll */
+.heatmap-scroll {
+    display: flex;
+    overflow-x: auto;
+    overflow-y: hidden;
+    gap: 16px;
+    padding-bottom: 12px;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: thin;
+    /* Show scrollbar for easier nav on desktop? Or hidden as per design. */
+    scrollbar-color: var(--text-secondary) transparent;
+}
+
+/* Hide scrollbar but keep functionality */
+.heatmap-scroll::-webkit-scrollbar {
+    height: 6px;
+}
+
+.heatmap-scroll::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+}
+
+/* Cards (Months or Years) */
+.view-card {
+    min-width: 100%;
+    /* Full width for mobile swipe feel */
+    scroll-snap-align: start;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    /* Align top like Year view */
+    height: auto;
+    /* Ensure full height usage */
+}
+
+.view-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: var(--text-primary);
+    padding-left: 4px;
+    /* Align with grid */
+}
+
+/* DAY VIEW (Calendar) */
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+    /* Slightly larger gap for touch targets */
+    width: 100%;
+    /* Fill available width */
+    align-content: start;
+}
+
+.calendar-header {
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+    margin-bottom: 4px;
+}
+
+.calendar-cell {
+    aspect-ratio: 1;
+    border-radius: 6px;
+    background-color: rgba(255, 255, 255, 0.03);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    transition: all 0.2s;
+    user-select: none;
+}
+
+.calendar-cell.empty {
+    background-color: transparent;
+}
+
+.calendar-cell.prev-month {
+    opacity: 0.6;
+    /* Distinguish overflow days */
+    border: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+/* Levels */
+.calendar-cell[data-level="1"],
+.week-cell[data-level="1"] {
+    background-color: var(--level-1-v2);
+    color: white;
+}
+
+.calendar-cell[data-level="2"],
+.week-cell[data-level="2"] {
+    background-color: var(--level-2-v2);
+    color: white;
+}
+
+.calendar-cell[data-level="3"],
+.week-cell[data-level="3"] {
+    background-color: var(--level-3-v2);
+    color: white;
+}
+
+.calendar-cell[data-level="4"],
+.week-cell[data-level="4"] {
+    background-color: var(--level-4-v2);
+    color: white;
+}
+
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.animate-spin {
+    animation: spin 1s linear infinite;
+}
+
+/* YEAR VIEW (Weekly columns) */
+.year-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 4px;
+    height: 100%;
+}
+
+.year-column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.month-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+}
+
+.week-cell {
+    width: 100%;
+    aspect-ratio: 1;
+    /* Make them square */
+    border-radius: 3px;
+    background-color: rgba(255, 255, 255, 0.03);
+    transition: opacity 0.2s;
+}
+
+.week-cell:hover {
+    opacity: 0.8;
+}

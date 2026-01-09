@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sports Tracker</title>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="app-container">
+        <header>
+            <h1>Activity Tracker</h1>
+            <p class="subtitle">Consistency is key</p>
+        </header>
+
+        <main>
+            <div class="stats-card">
+                <div class="stat-item">
+                    <span class="stat-value" id="total-count">0</span>
+                    <span class="stat-label">Total Check-ins</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="current-streak">0</span>
+                    <span class="stat-label">Current Streak</span>
+                </div>
+            </div>
+
+            <!-- Cat Check-in Interaction -->
+            <div id="cat-wrapper" class="cat-wrapper">
+                <div id="cat-character" class="cat-character">
+                    <svg viewBox="0 0 100 100" width="80" height="80" class="cat-svg">
+                        <g class="cat-group">
+                            <!-- Paw (Base) -->
+                            <path d="M20 80 Q 25 70 35 70 Q 45 70 50 80 L 20 80" fill="#cbd5e1" />
+
+                            <!-- Head (Main) -->
+                            <circle cx="50" cy="50" r="30" fill="#94a3b8" />
+
+                            <!-- Ears -->
+                            <path d="M25 35 L 20 15 L 45 25 Z" fill="#94a3b8" />
+                            <path d="M75 35 L 80 15 L 55 25 Z" fill="#94a3b8" />
+
+                            <!-- Inner Ears -->
+                            <path d="M28 32 L 25 20 L 40 26 Z" fill="#fca5a5" />
+                            <path d="M72 32 L 75 20 L 60 26 Z" fill="#fca5a5" />
+
+                            <!-- Eyes -->
+                            <ellipse cx="40" cy="45" rx="3" ry="4" fill="#0f172a" />
+                            <ellipse cx="60" cy="45" rx="3" ry="4" fill="#0f172a" />
+
+                            <!-- Nose -->
+                            <path d="M48 52 L 52 52 L 50 55 Z" fill="#fca5a5" />
+
+                            <!-- Mouth -->
+                            <path d="M45 58 Q 50 60 55 58" fill="none" stroke="#0f172a" stroke-width="1.5"
+                                stroke-linecap="round" />
+
+                            <!-- Paw (Foreground Peeking) -->
+                            <ellipse cx="30" cy="75" rx="8" ry="6" fill="#cbd5e1" stroke="#94a3b8" stroke-width="1" />
+                        </g>
+                    </svg>
+                    <!-- "Meow" hint that appears on spawn/hover -->
+                    <div class="cat-hint">Check in!</div>
+                </div>
+            </div>
+
+            <div class="heatmap-container" id="capture-area">
+                <div class="heatmap-header">
+                    <div class="header-left">
+                        <h3>Activity Map</h3>
+                        <div class="view-toggles">
+                            <span id="view-day" class="toggle-option active">Day</span>
+                            <span class="toggle-divider">/</span>
+                            <span id="view-year" class="toggle-option">Year</span>
+                        </div>
+                    </div>
+                    <button id="share-btn" class="icon-button" title="Share Snapshot">
+                        <!-- Simple Share Icon SVG -->
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+                            <polyline points="16 6 12 2 8 6"></polyline>
+                            <line x1="12" y1="2" x2="12" y2="15"></line>
+                        </svg>
+                    </button>
+                    <!-- Legend moved to bottom or kept here? The requester said 'whitespace between heatmap and button is weird' 
+                         Let's keep legend here for now but maybe make it cleaner. 
+                         Actually, let's keep the legend as is but make the header flex. 
+                    -->
+                </div>
+                <div class="legend-container">
+                    <span class="legend-label">Less</span>
+                    <div class="legend-scale">
+                        <div class="level level-0"></div>
+                        <div class="level level-1"></div>
+                        <div class="level level-2"></div>
+                        <div class="level level-3"></div>
+                        <div class="level level-4"></div>
+                    </div>
+                    <span class="legend-label">More</span>
+                </div>
+
+                <div class="heatmap-scroll">
+                    <div id="heatmap-grid" class="heatmap-grid">
+                        <!-- Grid injected by JS -->
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="script.js"></script>
+</body>
+
+</html>

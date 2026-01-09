@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cat Style Options</title>
+    <style>
+        body {
+            background-color: #0f172a;
+            color: #fff;
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px;
+            gap: 40px;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        .options-container {
+            display: flex;
+            gap: 40px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .cat-card {
+            background: #1e293b;
+            padding: 20px;
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .cat-card:hover {
+            border-color: #38bdf8;
+            transform: translateY(-5px);
+        }
+
+        .cat-label {
+            font-weight: 600;
+            color: #94a3b8;
+        }
+
+        svg {
+            filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3));
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Choose Your Companion</h1>
+
+    <div class="options-container">
+        <!-- Option 1: Classic Gray -->
+        <div class="cat-card">
+            <svg viewBox="0 0 100 100" width="120" height="120">
+                <g>
+                    <path d="M20 80 Q 25 70 35 70 Q 45 70 50 80 L 20 80" fill="#cbd5e1" />
+                    <circle cx="50" cy="50" r="30" fill="#94a3b8" />
+                    <path d="M25 35 L 20 15 L 45 25 Z" fill="#94a3b8" />
+                    <path d="M75 35 L 80 15 L 55 25 Z" fill="#94a3b8" />
+                    <path d="M28 32 L 25 20 L 40 26 Z" fill="#fca5a5" />
+                    <path d="M72 32 L 75 20 L 60 26 Z" fill="#fca5a5" />
+                    <ellipse cx="40" cy="45" rx="3" ry="4" fill="#0f172a" />
+                    <ellipse cx="60" cy="45" rx="3" ry="4" fill="#0f172a" />
+                    <path d="M48 52 L 52 52 L 50 55 Z" fill="#fca5a5" />
+                    <path d="M45 58 Q 50 60 55 58" fill="none" stroke="#0f172a" stroke-width="1.5"
+                        stroke-linecap="round" />
+                    <ellipse cx="30" cy="75" rx="8" ry="6" fill="#cbd5e1" stroke="#94a3b8" stroke-width="1" />
+                </g>
+            </svg>
+            <span class="cat-label">1. Classic Gray</span>
+        </div>
+
+        <!-- Option 2: Orange Tabby -->
+        <div class="cat-card">
+            <svg viewBox="0 0 100 100" width="120" height="120">
+                <g>
+                    <!-- Paw -->
+                    <path d="M20 80 Q 25 70 35 70 Q 45 70 50 80 L 20 80" fill="#fdba74" />
+                    <!-- Head -->
+                    <circle cx="50" cy="50" r="30" fill="#fb923c" />
+                    <!-- Stripes -->
+                    <path d="M50 25 L 45 35 L 55 35 Z" fill="#c2410c" opacity="0.6" />
+                    <path d="M25 45 L 35 50 L 25 55" fill="none" stroke="#c2410c" stroke-width="2" opacity="0.5" />
+                    <path d="M75 45 L 65 50 L 75 55" fill="none" stroke="#c2410c" stroke-width="2" opacity="0.5" />
+
+                    <!-- Ears -->
+                    <path d="M25 35 L 20 15 L 45 25 Z" fill="#fb923c" />
+                    <path d="M75 35 L 80 15 L 55 25 Z" fill="#fb923c" />
+                    <path d="M28 32 L 25 20 L 40 26 Z" fill="#fca5a5" />
+                    <path d="M72 32 L 75 20 L 60 26 Z" fill="#fca5a5" />
+
+                    <!-- Eyes -->
+                    <ellipse cx="40" cy="45" rx="3" ry="4" fill="#0f172a" />
+                    <ellipse cx="60" cy="45" rx="3" ry="4" fill="#0f172a" />
+
+                    <path d="M48 52 L 52 52 L 50 55 Z" fill="#fca5a5" />
+                    <path d="M45 58 Q 50 60 55 58" fill="none" stroke="#0f172a" stroke-width="1.5"
+                        stroke-linecap="round" />
+                    <ellipse cx="30" cy="75" rx="8" ry="6" fill="#fdba74" stroke="#fb923c" stroke-width="1" />
+                </g>
+            </svg>
+            <span class="cat-label">2. Orange Tabby</span>
+        </div>
+
+        <!-- Option 3: Tuxedo / Black -->
+        <div class="cat-card">
+            <svg viewBox="0 0 100 100" width="120" height="120">
+                <g>
+                    <!-- Paw (White tip) -->
+                    <path d="M20 80 Q 25 70 35 70 Q 45 70 50 80 L 20 80" fill="#fff" />
+
+                    <!-- Head -->
+                    <circle cx="50" cy="50" r="30" fill="#1e293b" stroke="#334155" stroke-width="1" />
+
+                    <!-- Ears -->
+                    <path d="M25 35 L 20 15 L 45 25 Z" fill="#1e293b" />
+                    <path d="M75 35 L 80 15 L 55 25 Z" fill="#1e293b" />
+                    <path d="M28 32 L 25 20 L 40 26 Z" fill="#475569" />
+                    <path d="M72 32 L 75 20 L 60 26 Z" fill="#475569" />
+
+                    <!-- Eyes (Yellow/Green) -->
+                    <ellipse cx="40" cy="45" rx="3" ry="4" fill="#bef264" />
+                    <ellipse cx="60" cy="45" rx="3" ry="4" fill="#bef264" />
+                    <circle cx="40" cy="45" r="1" fill="#0f172a" />
+                    <circle cx="60" cy="45" r="1" fill="#0f172a" />
+
+                    <path d="M48 52 L 52 52 L 50 55 Z" fill="#fca5a5" />
+                    <path d="M45 58 Q 50 60 55 58" fill="none" stroke="#94a3b8" stroke-width="1.5"
+                        stroke-linecap="round" />
+                    <ellipse cx="30" cy="75" rx="8" ry="6" fill="#fff" stroke="#cbd5e1" stroke-width="1" />
+                </g>
+            </svg>
+            <span class="cat-label">3. Tuxedo</span>
+        </div>
+
+        <!-- Option 4: Calico -->
+        <div class="cat-card">
+            <svg viewBox="0 0 100 100" width="120" height="120">
+                <g>
+                    <path d="M20 80 Q 25 70 35 70 Q 45 70 50 80 L 20 80" fill="#fff" />
+                    <circle cx="50" cy="50" r="30" fill="#fff" />
+                    <!-- Patches -->
+                    <path d="M70 35 L 55 25 L 75 45 Z" fill="#ea580c" />
+                    <path d="M25 60 L 35 70 L 20 70 Z" fill="#1e293b" />
+                    <circle cx="35" cy="30" r="8" fill="#1e293b" opacity="0.8" />
+
+                    <path d="M25 35 L 20 15 L 45 25 Z" fill="#fff" />
+                    <path d="M75 35 L 80 15 L 55 25 Z" fill="#ea580c" />
+                    <path d="M28 32 L 25 20 L 40 26 Z" fill="#fca5a5" />
+                    <path d="M72 32 L 75 20 L 60 26 Z" fill="#fca5a5" />
+
+                    <ellipse cx="40" cy="45" rx="3" ry="4" fill="#0f172a" />
+                    <ellipse cx="60" cy="45" rx="3" ry="4" fill="#0f172a" />
+                    <path d="M48 52 L 52 52 L 50 55 Z" fill="#fca5a5" />
+                    <path d="M45 58 Q 50 60 55 58" fill="none" stroke="#0f172a" stroke-width="1.5"
+                        stroke-linecap="round" />
+                    <ellipse cx="30" cy="75" rx="8" ry="6" fill="#fff" stroke="#94a3b8" stroke-width="1" />
+                </g>
+            </svg>
+            <span class="cat-label">4. Calico</span>
+        </div>
+
+        <!-- Option 5: Siamese -->
+        <div class="cat-card">
+            <svg viewBox="0 0 100 100" width="120" height="120">
+                <g>
+                    <path d="M20 80 Q 25 70 35 70 Q 45 70 50 80 L 20 80" fill="#fef3c7" />
+                    <circle cx="50" cy="50" r="30" fill="#fef3c7" />
+
+                    <!-- Mask -->
+                    <ellipse cx="50" cy="50" rx="12" ry="10" fill="#451a03" opacity="0.8" />
+
+                    <path d="M25 35 L 20 15 L 45 25 Z" fill="#451a03" />
+                    <path d="M75 35 L 80 15 L 55 25 Z" fill="#451a03" />
+
+                    <ellipse cx="40" cy="45" rx="3" ry="4" fill="#60a5fa" /> <!-- Blue eyes -->
+                    <ellipse cx="60" cy="45" rx="3" ry="4" fill="#60a5fa" />
+
+                    <path d="M48 52 L 52 52 L 50 55 Z" fill="#1e293b" />
+                    <path d="M45 58 Q 50 60 55 58" fill="none" stroke="#451a03" stroke-width="1.5"
+                        stroke-linecap="round" />
+                    <ellipse cx="30" cy="75" rx="8" ry="6" fill="#451a03" stroke="#451a03" stroke-width="1" />
+                </g>
+            </svg>
+            <span class="cat-label">5. Siamese</span>
+        </div>
+
+        <!-- Option 6: Void -->
+        <div class="cat-card">
+            <svg viewBox="0 0 100 100" width="120" height="120">
+                <g>
+                    <path d="M20 80 Q 25 70 35 70 Q 45 70 50 80 L 20 80" fill="#020617" />
+                    <circle cx="50" cy="50" r="30" fill="#020617" />
+
+                    <path d="M25 35 L 20 15 L 45 25 Z" fill="#020617" />
+                    <path d="M75 35 L 80 15 L 55 25 Z" fill="#020617" />
+
+                    <!-- Glowing Eyes -->
+                    <ellipse cx="40" cy="45" rx="4" ry="5" fill="#facc15" />
+                    <ellipse cx="60" cy="45" rx="4" ry="5" fill="#facc15" />
+                    <circle cx="40" cy="45" r="1.5" fill="#000" />
+                    <circle cx="60" cy="45" r="1.5" fill="#000" />
+
+                    <!-- Tiny nose -->
+                    <path d="M49 53 L 51 53 L 50 55 Z" fill="#334155" />
+                    <ellipse cx="30" cy="75" rx="8" ry="6" fill="#020617" stroke="#1e293b" stroke-width="1" />
+                </g>
+            </svg>
+            <span class="cat-label">6. Void</span>
+        </div>
+
+    </div>
+</body>
+
+</html>
