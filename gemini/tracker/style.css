@@ -458,8 +458,10 @@ h1 {
 /* YEAR VIEW (Weekly columns) */
 .year-grid {
     display: grid;
-    grid-template-columns: repeat(12, 1fr);
-    gap: 4px;
+    /* minmax(0, 1fr) allows columns to shrink below content size (labels) to avoid overflow */
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 2px;
+    /* Tighter gap for mobile */
     height: 100%;
 }
 
@@ -467,15 +469,23 @@ h1 {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 4px;
+    gap: 3px;
+    /* Ensure column doesn't force width if label is long (though label wraps or clips? flex item.. ) */
+    min-width: 0;
 }
 
 .month-label {
-    font-size: 0.7rem;
+    font-size: 0.55rem;
+    /* Smaller for mobile fit */
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0;
     color: var(--text-secondary);
     margin-bottom: 4px;
+    width: 100%;
+    text-align: center;
+    overflow: hidden;
+    /* Clip if somehow still too big */
+    text-overflow: clip;
 }
 
 .week-cell {
