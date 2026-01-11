@@ -142,6 +142,7 @@ function init() {
                 // Update Pagination
                 const index = Array.from(swiperContainer.children).indexOf(card);
                 updatePagination(index);
+                adjustContainerHeight(card);
             }
         });
     }, { root: document.getElementById('swiper-container'), threshold: 0.6 });
@@ -195,6 +196,7 @@ function renderActivities() {
         const activeCard = document.querySelector(`.activity-card[data-id="${currentActivityId}"]`);
         if (activeCard) {
             activeCard.scrollIntoView({ inline: 'center', behavior: 'auto' });
+            adjustContainerHeight(activeCard);
         }
         syncNewActivityCardHeight();
     }, 0);
@@ -261,12 +263,14 @@ function createAddActivityCard() {
     const card = document.createElement('div');
     card.className = 'activity-card new-activity-card';
     card.innerHTML = `
-        <div class="add-button">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="12" y1="5" x2="12" y2="19"></line>
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
-            <span>New Activity</span>
+        <div class="new-activity-inner">
+            <div class="add-button">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                <span>New Activity</span>
+            </div>
         </div>
     `;
     card.addEventListener('click', () => {
@@ -500,6 +504,10 @@ function setCardView(triggerCard, triggerActivity, mode) {
 
     // Sync height for empty card
     syncNewActivityCardHeight();
+
+    // Adjust container height
+    const activeCard = document.querySelector(`.activity-card[data-id="${currentActivityId}"]`);
+    if (activeCard) adjustContainerHeight(activeCard);
 }
 
 
@@ -822,26 +830,91 @@ function getLegendHTML() {
     `;
 }
 
-// Helper: Sync "New Activity" card height to match populated cards
-function syncNewActivityCardHeight() {
-    // Find a reference card (first activity card)
-    const refCard = document.querySelector('.activity-card:not(.new-activity-card)');
-    const newCard = document.querySelector('.new-activity-card');
+// Helper: Calculate Standard Height for a given mode
+function calculateStandardHeight(mode) {
+    // 1. Create dummy activity
+    const dummy = {
+        id: 'temp-measure',
+        name: 'Measurement',
+        created_at: 0,
+        data: {},
+        viewMode: mode // Use requested mode
+    };
 
-    if (refCard && newCard) {
-        // Allow refCard to layout first
+    // 2. Create card
+    const card = createActivityCard(dummy);
+
+    // 3. Force hidden render to measure
+    card.style.position = 'absolute';
+    card.style.visibility = 'hidden';
+    card.style.pointerEvents = 'none';
+
+    // Determine correct width to mimic flex item
+    let width;
+    const refCard = document.querySelector('.activity-card:not(.new-activity-card):not([data-id="temp-measure"])');
+    if (refCard) {
+        width = refCard.getBoundingClientRect().width;
+    } else {
+        // Fallback: container clientWidth - padding
+        const style = window.getComputedStyle(swiperContainer);
+        const padding = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
+        width = swiperContainer.clientWidth - padding;
+    }
+    card.style.width = `${width}px`;
+
+    swiperContainer.appendChild(card);
+
+    // 4. Measure
+    const rect = card.getBoundingClientRect();
+    const height = Math.ceil(rect.height);
+
+    // 5. Clean
+    swiperContainer.removeChild(card);
+
+    return height;
+}
+
+// Helper: Sync "New Activity" card height to match Current View Mode height
+function syncNewActivityCardHeight() {
+    const newCard = document.querySelector('.new-activity-card');
+    if (newCard && swiperContainer) {
+        // Determine target mode
+        let mode = 'day';
+        if (activities.length > 0) {
+            // Since we sync all cards, checking the first one is effective
+            mode = activities[0].viewMode || 'day';
+        }
+
         requestAnimationFrame(() => {
-            // Set height explicitly to match the reference
-            newCard.style.height = `${refCard.clientHeight}px`;
-            // Also ensure flex logic doesn't break?
-            // Since we removed height:100% and flex:1, explicit pixel height is good.
+            const stdHeight = calculateStandardHeight(mode);
+            if (stdHeight > 0) {
+                newCard.style.height = `${stdHeight}px`;
+            }
         });
     }
+}
+
+// Helper: Adjust container height to fit active card
+function adjustContainerHeight(card) {
+    if (!card) return;
+
+    // Ensure layout is done
+    requestAnimationFrame(() => {
+        const rect = card.getBoundingClientRect();
+        const height = Math.ceil(rect.height);
+        if (height > 0) {
+            // Add 2px buffer to preventing bottom-border clipping due to sub-pixel rendering
+            swiperContainer.style.height = `${height + 2}px`;
+        }
+    });
 }
 
 // Window resize listener
 window.addEventListener('resize', () => {
     syncNewActivityCardHeight();
+    // Re-adjust container
+    const active = document.querySelector(`.activity-card[data-id="${currentActivityId}"]`) || document.querySelector('.new-activity-card');
+    if (active) adjustContainerHeight(active);
 });
 
 // Run
