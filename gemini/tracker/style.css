@@ -65,18 +65,20 @@ h1 {
 /* --- Swiper / Multi-Activity Layout --- */
 #swiper-wrapper {
     width: 100%;
-    height: 100%;
+    /* height: 100%; removed to allow shrink */
+    min-height: 100%;
     overflow: hidden;
     display: flex;
     flex-direction: column;
     position: relative;
     /* Context for pagination */
-    padding-bottom: 40px;
+    padding-bottom: 20px;
     /* Reserve space for pagination below cards */
 }
 
 #swiper-container {
-    flex: 1;
+    flex: 0 0 auto;
+    /* Allow shrinking to fit content */
     display: flex;
     overflow-x: auto;
     scroll-snap-type: x mandatory;
@@ -717,10 +719,10 @@ h1 {
 
 /* Pagination */
 .swiper-pagination {
-    position: absolute;
-    bottom: 15px;
-    /* Above the FAB/Cat usually, or aligned */
-    left: 0;
+    position: static;
+    margin-top: 16px;
+    /* position: absolute; bottom: 15px; left: 0; removed */
+
     width: 100%;
     display: flex;
     justify-content: center;

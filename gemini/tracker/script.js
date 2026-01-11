@@ -196,6 +196,7 @@ function renderActivities() {
         if (activeCard) {
             activeCard.scrollIntoView({ inline: 'center', behavior: 'auto' });
         }
+        syncNewActivityCardHeight();
     }, 0);
 }
 
@@ -215,8 +216,8 @@ function createActivityCard(activity) {
                 <span class="stat-label">Total Check-ins</span>
             </div>
             <div class="stat-item">
-                <span class="stat-value current-streak">...</span>
-                <span class="stat-label">Current Streak</span>
+                <span class="stat-value check-in-days">...</span>
+                <span class="stat-label">Days Active</span>
             </div>
         </div>
     `;
@@ -412,24 +413,10 @@ function updateCardStats(card, activity) {
     const totalEl = card.querySelector('.total-count');
     if (totalEl) totalEl.textContent = total;
 
-    // 2. Streak
-    let streak = 0;
-    let d = dayjs();
-    // Check today first
-    if (data[d.format('YYYY-MM-DD')]) {
-        streak++;
-    }
-    // Check previous days
-    while (true) {
-        d = d.subtract(1, 'day');
-        if (data[d.format('YYYY-MM-DD')]) {
-            streak++;
-        } else {
-            break;
-        }
-    }
-    const streakEl = card.querySelector('.current-streak');
-    if (streakEl) streakEl.textContent = streak;
+    // 2. Check in Days
+    const daysCount = Object.keys(data).length;
+    const daysEl = card.querySelector('.check-in-days');
+    if (daysEl) daysEl.textContent = daysCount;
 }
 
 function renderCardHeatmap(card, activity) {
@@ -510,6 +497,9 @@ function setCardView(triggerCard, triggerActivity, mode) {
             }
         }
     });
+
+    // Sync height for empty card
+    syncNewActivityCardHeight();
 }
 
 
@@ -831,6 +821,28 @@ function getLegendHTML() {
         <span class="legend-label">More</span>
     `;
 }
+
+// Helper: Sync "New Activity" card height to match populated cards
+function syncNewActivityCardHeight() {
+    // Find a reference card (first activity card)
+    const refCard = document.querySelector('.activity-card:not(.new-activity-card)');
+    const newCard = document.querySelector('.new-activity-card');
+
+    if (refCard && newCard) {
+        // Allow refCard to layout first
+        requestAnimationFrame(() => {
+            // Set height explicitly to match the reference
+            newCard.style.height = `${refCard.clientHeight}px`;
+            // Also ensure flex logic doesn't break?
+            // Since we removed height:100% and flex:1, explicit pixel height is good.
+        });
+    }
+}
+
+// Window resize listener
+window.addEventListener('resize', () => {
+    syncNewActivityCardHeight();
+});
 
 // Run
 init();
