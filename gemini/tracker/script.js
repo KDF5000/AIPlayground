@@ -465,8 +465,7 @@ function renderCardHeatmap(card, activity) {
 
     // Attach Share Listener
     const shareBtn = card.querySelector('.share-btn');
-    // shareBtn.onclick = () => exportCardTimeline(card, activity); 
-    // Commented out until exportCardTimeline is defined or refactored.
+    shareBtn.onclick = () => exportCardTimeline(card, activity);
 
     // Render Logic
     if (mode === 'day') {
@@ -758,6 +757,8 @@ function exportCardTimeline(card, activity) {
                 const header = clonedCard.querySelector('.heatmap-header');
                 if (header) header.style.display = 'none';
 
+                // Ensure Pagination is not visible if captured (it's outside card, so irrelevant)
+
                 // Adjust Styles for Snapshot
                 clonedCard.style.padding = '24px';
                 clonedCard.style.width = 'auto';
@@ -772,6 +773,15 @@ function exportCardTimeline(card, activity) {
                 if (scroll) {
                     scroll.style.overflow = 'visible';
                     scroll.style.height = 'auto';
+                    scroll.style.justifyContent = 'center'; // Center the single card
+
+                    // Only show the LAST child (Current Month/Year) to avoid showing incomplete history in snapshot
+                    const children = Array.from(scroll.children);
+                    children.forEach((child, index) => {
+                        if (index < children.length - 1) {
+                            child.style.display = 'none';
+                        }
+                    });
                 }
             }
         },
