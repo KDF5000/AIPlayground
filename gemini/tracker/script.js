@@ -1,13 +1,101 @@
 // State
 const STORAGE_KEY = 'sports_tracker_data';
-let activityData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
-let viewMode = 'day'; // 'day' or 'month'
+// activityData removed, using 'activities' array instead.
+let activities = [];
+let currentActivityId = null;
+let viewMode = 'day'; // Global default, but cards track their own
+let isLoadingHistory = false;
+let earliestLoadedMonth = null;
+let earliestLoadedYear = null;
+let swiperObserver = null;
+
 
 // DOM Elements
 const totalCountEl = document.getElementById('total-count');
 const currentStreakEl = document.getElementById('current-streak');
 // const logBtn = document.getElementById('log-btn'); // REMOVED
 const catCharacter = document.getElementById('cat-character');
+const appContainer = document.querySelector('.app-container');
+// We will wipe the existing static container and build the swiper dynamically.
+
+// Load Data
+const storedData = localStorage.getItem('activityData');
+if (storedData) {
+    const parsed = JSON.parse(storedData);
+    // Migration Check: Is it an array?
+    if (Array.isArray(parsed)) {
+        // Already new format (or just an array? New format is object {activities: []})
+        // Wait, plan said structure is { activities: [], currentActivityId: ... }
+        // Let's store the WHOLE state object in a new key? Or reuse 'activityData'? 
+        // Reusing 'activityData' is risky if format changes.
+        // Let's check checks.
+
+        if (parsed.activities) {
+            activities = parsed.activities;
+            currentActivityId = parsed.currentActivityId || activities[0].id;
+        } else {
+            // Old Format: This parsed object is the data map itself { "date": count }
+            migrateData(parsed);
+        }
+    } else {
+        // It's an object. Is it old data map or new root object?
+        if (parsed.activities) {
+            activities = parsed.activities;
+            currentActivityId = parsed.currentActivityId || (activities[0] ? activities[0].id : null);
+        } else {
+            // Assume Old Format
+            migrateData(parsed);
+        }
+    }
+} else {
+    // No data, start empty
+    activities = [];
+}
+
+function migrateData(oldData) {
+    const newId = 'act_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
+    const defaultActivity = {
+        id: newId,
+        name: "Activity Tracker",
+        created_at: Date.now(),
+        data: oldData,
+        viewMode: 'day' // Default view per activity
+    };
+    activities = [defaultActivity];
+    currentActivityId = newId;
+    saveData();
+}
+
+function saveData() {
+    const root = {
+        activities: activities,
+        currentActivityId: currentActivityId
+    };
+    localStorage.setItem('activityData', JSON.stringify(root));
+}
+
+function createActivity(name) {
+    const newId = 'act_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
+    const newActivity = {
+        id: newId,
+        name: name,
+        created_at: Date.now(),
+        name: name,
+        created_at: Date.now(),
+        data: {},
+        viewMode: viewMode // Use current global view mode preference
+    };
+    activities.push(newActivity);
+    currentActivityId = newId;
+    saveData();
+    return newActivity;
+}
+
+// Helper to get current activity object
+function getCurrentActivity() {
+    return activities.find(a => a.id === currentActivityId) || activities[0];
+}
+
 const catWrapper = document.getElementById('cat-wrapper');
 
 const heatmapGrid = document.getElementById('heatmap-grid');
@@ -17,33 +105,239 @@ const shareBtn = document.getElementById('share-btn');
 const captureArea = document.querySelector('.app-container');
 const viewToggleDay = document.getElementById('view-day');
 const viewToggleMonth = document.getElementById('view-month');
+const swiperPagination = document.querySelector('.swiper-pagination');
 
+// Modal Elements
+const addActivityModal = document.getElementById('add-activity-modal');
+const activityNameInput = document.getElementById('activity-name-input');
+const modalCancelBtn = document.getElementById('modal-cancel');
+const modalConfirmBtn = document.getElementById('modal-confirm');
 // ... (existing code)
 
-function createYearCard(year) {
-    // ...
-    // Inside the loop:
-    const monthStart = dayjs(`${year}-${m + 1}-01`);
-    const label = document.createElement('div');
-    label.className = 'month-label';
-    label.textContent = monthStart.format('MMM');
-    col.appendChild(label);
 
-    const daysInMonth = monthStart.daysInMonth(); // FIXED
-
-    const chunks = [
-        { s: 1, e: 7 }, { s: 8, e: 14 }, { s: 15, e: 21 }, { s: 22, e: 28 }, { s: 29, e: 31 }
-    ];
-    // ...
-}
 
 // Initialization
 function init() {
-    renderStats();
-    renderHeatmap();
-    initCat(); // New: Position the cat
-    setupListeners();
+    initCat();
+
+    // Cat Interaction
+    if (catCharacter) {
+        catCharacter.addEventListener('click', logWorkout);
+    }
+
+    // Swiper Observer
+    swiperObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const card = entry.target;
+                const id = card.dataset.id;
+
+                // Update State
+                if (id && id !== currentActivityId) {
+                    currentActivityId = id;
+                    saveData();
+                }
+
+                // Update Pagination
+                const index = Array.from(swiperContainer.children).indexOf(card);
+                updatePagination(index);
+            }
+        });
+    }, { root: document.getElementById('swiper-container'), threshold: 0.6 });
+
+    renderActivities();
+    setupModalListeners();
 }
+
+function setupModalListeners() {
+    modalCancelBtn.addEventListener('click', closeModal);
+    modalConfirmBtn.addEventListener('click', handleCreateActivity);
+
+    // Close on click outside (optional)
+    addActivityModal.addEventListener('click', (e) => {
+        if (e.target === addActivityModal) closeModal();
+    });
+
+    // Enter key
+    activityNameInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            handleCreateActivity();
+        }
+    });
+}
+
+
+const swiperContainer = document.getElementById('swiper-container');
+
+function renderActivities() {
+    swiperContainer.innerHTML = '';
+
+    // 1. Render existing activities
+    activities.forEach(activity => {
+        const card = createActivityCard(activity);
+        if (swiperObserver) swiperObserver.observe(card);
+        swiperContainer.appendChild(card);
+    });
+
+    // 2. Render "Add Activity" card
+    const addCard = createAddActivityCard();
+    if (swiperObserver) swiperObserver.observe(addCard);
+    swiperContainer.appendChild(addCard);
+
+    // 3. Render Pagination
+    renderPagination();
+
+    // 3. Scroll to current activity
+    // setTimeout to allow layout
+    setTimeout(() => {
+        const activeCard = document.querySelector(`.activity-card[data-id="${currentActivityId}"]`);
+        if (activeCard) {
+            activeCard.scrollIntoView({ inline: 'center', behavior: 'auto' });
+        }
+    }, 0);
+}
+
+function createActivityCard(activity) {
+    const card = document.createElement('div');
+    card.className = 'activity-card';
+    card.dataset.id = activity.id;
+
+    // Stats Card
+    const stats = document.createElement('div');
+    stats.className = 'stats-card';
+    stats.innerHTML = `
+        <h3 class="stats-title">${activity.name}</h3>
+        <div class="stats-row">
+            <div class="stat-item">
+                <span class="stat-value total-count">...</span>
+                <span class="stat-label">Total Check-ins</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value current-streak">...</span>
+                <span class="stat-label">Current Streak</span>
+            </div>
+        </div>
+    `;
+    card.appendChild(stats);
+
+    // Heatmap Card
+    const data = activity.data;
+    const heatmapContainer = document.createElement('div');
+    heatmapContainer.className = 'heatmap-container heatmap-scroll-wrapper';
+
+    heatmapContainer.innerHTML = `
+        <div class="heatmap-header">
+            <div class="header-left">
+                <div class="view-toggles">
+                    <span class="toggle-option view-day active" data-mode="day">Day</span>
+                    <span class="toggle-divider">/</span>
+                    <span class="toggle-option view-month" data-mode="month">Month</span>
+                </div>
+            </div>
+            <button class="icon-button share-btn" title="Share Snapshot">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
+            </button>
+        </div>
+        <div class="legend-container">
+            <span class="legend-label">Less</span>
+            <div class="legend-scale">
+                 <div class="legend-box level-0"></div><div class="legend-box level-1"></div><div class="legend-box level-2"></div><div class="legend-box level-3"></div><div class="legend-box level-4"></div>
+            </div>
+            <span class="legend-label">More</span>
+        </div>
+        <div class="heatmap-scroll"></div>
+    `;
+
+    card.appendChild(heatmapContainer);
+
+    // Render content immediately
+    // Update references because we changed class names/structure
+    // updateCardStats checks .total-count, which is inside stats-section (fine)
+    // renderCardHeatmap checks .heatmap-scroll, which is inside heatmap-section (fine)
+
+    updateCardStats(card, activity);
+    renderCardHeatmap(card, activity);
+
+    return card;
+}
+
+function createAddActivityCard() {
+    const card = document.createElement('div');
+    card.className = 'activity-card new-activity-card';
+    card.innerHTML = `
+        <div class="add-button">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            <span>New Activity</span>
+        </div>
+    `;
+    card.addEventListener('click', () => {
+        openModal();
+    });
+    return card;
+}
+
+// Modal Functions
+function openModal() {
+    addActivityModal.classList.add('active');
+    activityNameInput.value = '';
+    setTimeout(() => activityNameInput.focus(), 100);
+}
+
+function closeModal() {
+    addActivityModal.classList.remove('active');
+    activityNameInput.blur();
+}
+
+function handleCreateActivity() {
+    // Prevent double submission if already closed or handling
+    if (!addActivityModal.classList.contains('active')) return;
+
+    const name = activityNameInput.value.trim();
+    if (name) {
+        // Close first to prevent re-entry
+        closeModal();
+        createActivity(name);
+        renderActivities();
+    }
+}
+
+// Pagination Functions
+function renderPagination() {
+    if (!swiperPagination) return;
+    swiperPagination.innerHTML = '';
+    const count = activities.length + 1; // +1 for Add Card
+
+    for (let i = 0; i < count; i++) {
+        const dot = document.createElement('div');
+        dot.className = 'swiper-pagination-bullet';
+        if (i === 0) dot.classList.add('swiper-pagination-bullet-active');
+
+        // Optional: Click to scroll
+        dot.addEventListener('click', () => {
+            const targetCard = swiperContainer.children[i];
+            if (targetCard) targetCard.scrollIntoView({ inline: 'center', behavior: 'smooth' });
+        });
+
+        swiperPagination.appendChild(dot);
+    }
+}
+
+function updatePagination(activeIndex) {
+    if (!swiperPagination) return;
+    const dots = swiperPagination.children;
+    for (let i = 0; i < dots.length; i++) {
+        if (i === activeIndex) {
+            dots[i].classList.add('swiper-pagination-bullet-active');
+        } else {
+            dots[i].classList.remove('swiper-pagination-bullet-active');
+        }
+    }
+}
+
 
 function initCat() {
     // Always on left side for easier mobile thumb reach
@@ -60,204 +354,154 @@ function initCat() {
 // Logic: Check-in
 function logWorkout() {
     const today = dayjs().format('YYYY-MM-DD');
+    const currentActivity = getCurrentActivity();
+    const data = currentActivity.data;
 
-    // Shake Animation
+    // Shake animation
     catWrapper.classList.add('shaking');
-    setTimeout(() => catWrapper.classList.remove('shaking'), 400); // Remove after anim
+    setTimeout(() => {
+        catWrapper.classList.remove('shaking');
+    }, 500);
 
-    // Increment count
-    activityData[today] = (activityData[today] || 0) + 1;
-    saveData();
+    // Update Data
+    if (!data[today]) {
+        data[today] = 1;
+    } else {
+        data[today]++;
+    }
 
-    // Update UI
-    renderStats();
-    renderHeatmap();
+    // Save
+    saveData(); // Saves the whole activities array
 
-    // Optional: Respawn cat elsewhere after check-in?
-    setTimeout(initCat, 800);
+    // Respawn Cat
+    initCat();
+
+    // Re-render Active Card
+    const activeCard = document.querySelector(`.activity-card[data-id="${currentActivityId}"]`);
+    if (activeCard) {
+        updateCardStats(activeCard, currentActivity);
+        renderCardHeatmap(activeCard, currentActivity);
+    }
 }
 
 // Logic: Save to LocalStorage
 function saveData() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(activityData));
+    const root = {
+        activities: activities,
+        currentActivityId: currentActivityId
+    };
+    localStorage.setItem('activityData', JSON.stringify(root));
 }
 
-// Logic: Rendering Stats
-function renderStats() {
-    // Total Check-ins
-    const total = Object.values(activityData).reduce((sum, count) => sum + count, 0);
-    totalCountEl.textContent = total;
+// --- Helper Functions for Per-Card Rendering ---
 
-    // Current Streak
+function updateCardStats(card, activity) {
+    const data = activity.data;
+    const today = dayjs();
+
+    // 1. Total
+    const total = Object.values(data).reduce((sum, count) => sum + count, 0);
+    const totalEl = card.querySelector('.total-count');
+    if (totalEl) totalEl.textContent = total;
+
+    // 2. Streak
     let streak = 0;
-    let currentDay = dayjs();
-
-    // specific check for today: if logged, streak starts counting, if not, check yesterday
-    if (activityData[currentDay.format('YYYY-MM-DD')]) {
+    let d = dayjs();
+    // Check today first
+    if (data[d.format('YYYY-MM-DD')]) {
         streak++;
-        currentDay = currentDay.subtract(1, 'day');
-    } else {
-        // If not logged today, check yesterday to see if streak is active
-        const yesterday = currentDay.subtract(1, 'day');
-        if (!activityData[yesterday.format('YYYY-MM-DD')]) {
-            streak = 0;
-        } else {
-            currentDay = yesterday;
-        }
     }
-
-    // Iterate backwards
-    while (streak > 0 || (streak === 0 && activityData[currentDay.format('YYYY-MM-DD')])) {
-        if (activityData[currentDay.format('YYYY-MM-DD')]) {
-            if (streak === 0 && !activityData[dayjs().format('YYYY-MM-DD')]) {
-                // edge case refactor: simplified loop is better
-                streak++;
-            } else if (streak > 0) {
-                streak++;
-            }
-        } else {
-            break;
-        }
-        currentDay = currentDay.subtract(1, 'day');
-    }
-
-    currentStreakEl.textContent = calculateStreak();
-}
-
-function calculateStreak() {
-    const dates = Object.keys(activityData).sort();
-    if (dates.length === 0) return 0;
-
-    const today = dayjs().format('YYYY-MM-DD');
-    const yesterday = dayjs().subtract(1, 'day').format('YYYY-MM-DD');
-
-    let lastDate = dates[dates.length - 1];
-
-    // Streak broken if last entry is not today or yesterday
-    if (lastDate !== today && lastDate !== yesterday) return 0;
-
-    let streak = 1; // start with the valid last entry
-    let checkDate = dayjs(lastDate).subtract(1, 'day');
-
-    for (let i = dates.length - 2; i >= 0; i--) {
-        if (dates[i] === checkDate.format('YYYY-MM-DD')) {
+    // Check previous days
+    while (true) {
+        d = d.subtract(1, 'day');
+        if (data[d.format('YYYY-MM-DD')]) {
             streak++;
-            checkDate = checkDate.subtract(1, 'day');
         } else {
             break;
         }
     }
-    return streak;
+    const streakEl = card.querySelector('.current-streak');
+    if (streakEl) streakEl.textContent = streak;
 }
 
+function renderCardHeatmap(card, activity) {
+    const container = card.querySelector('.heatmap-scroll');
+    if (!container) return;
 
-// Logic: Heatmap
-function setupListeners() {
-    catCharacter.addEventListener('click', logWorkout);
-    shareBtn.addEventListener('click', exportTimeline);
+    container.innerHTML = '';
 
-    viewToggleDay.addEventListener('click', () => setView('day'));
-    viewToggleMonth.addEventListener('click', () => setView('month'));
+    // Check view mode for this activity (default 'day' if not set)
+    const mode = activity.viewMode || 'day';
 
-    // Infinite Scroll Listener
-    heatmapContainer.addEventListener('scroll', handleScroll);
-}
-
-function handleScroll() {
-    if (isLoadingHistory) return;
-
-    // Threshold to load more: < 100px from left
-    if (heatmapContainer.scrollLeft < 100) {
-        isLoadingHistory = true;
-        // Small delay to allow scroll interaction to settle slightly or just debounce
-        setTimeout(() => {
-            prependHistory();
-            isLoadingHistory = false;
-        }, 50);
-    }
-}
-
-function renderHeatmap() {
-    heatmapContainer.innerHTML = '';
-    earliestLoadedMonth = null;
-    earliestLoadedYear = null;
-    isLoadingHistory = false;
-
-    if (viewMode === 'day') {
-        renderCalendarSwiper(true); // true = initial load
-        updateLegend('day');
+    // Update Toggles UI state
+    const toggleDay = card.querySelector('.view-day');
+    const toggleMonth = card.querySelector('.view-month');
+    if (mode === 'day') {
+        toggleDay.classList.add('active');
+        toggleMonth.classList.remove('active');
     } else {
-        renderMonthSwiper(true);
-        updateLegend('week');
-    }
-}
-
-function prependHistory() {
-    // Capture old scroll height/width? 
-    // Is horizontal, so we need scrollWidth.
-    const oldScrollWidth = heatmapContainer.scrollWidth;
-
-    if (viewMode === 'day') {
-        renderCalendarSwiper(false); // false = prepend
-    } else {
-        renderMonthSwiper(false);
+        toggleMonth.classList.add('active');
+        toggleDay.classList.remove('active');
     }
 
-    // Adjust scroll position to maintain view
-    const newScrollWidth = heatmapContainer.scrollWidth;
-    heatmapContainer.scrollLeft += (newScrollWidth - oldScrollWidth);
-}
+    // Attach Toggle Listeners
+    toggleDay.onclick = () => setCardView(card, activity, 'day');
+    toggleMonth.onclick = () => setCardView(card, activity, 'month');
 
-function renderCalendarSwiper(isInitial) {
-    const monthsLoading = 6; // Load 6 months at a time
-    let startMonth;
+    // Attach Share Listener
+    const shareBtn = card.querySelector('.share-btn');
+    // shareBtn.onclick = () => exportCardTimeline(card, activity); 
+    // Commented out until exportCardTimeline is defined or refactored.
 
-    if (isInitial) {
-        // Initial: Load last 12 months
-        startMonth = dayjs().startOf('month');
-        // We render backwards from startMonth? No, we render a list.
-        // Let's determine the range.
-        // Range: [End - 11 months] to [End]
-        // But for prepend logic, we track "Earliest Loaded".
-
-        // Initial approach: Render [Today-11mo] ... [Today].
-        // Earliest = Today-11mo.
-
-        let current = dayjs().subtract(11, 'month').startOf('month');
-        earliestLoadedMonth = current.clone();
-
-        const fragment = document.createDocumentFragment();
-
-        for (let i = 0; i < 12; i++) {
-            const card = createMonthCard(current);
-            fragment.appendChild(card);
-            current = current.add(1, 'month');
+    // Render Logic
+    if (mode === 'day') {
+        const currentMonth = dayjs().startOf('month');
+        // Render current month plus previous 2
+        for (let i = 2; i >= 0; i--) {
+            const m = currentMonth.subtract(i, 'month');
+            const monthCard = createMonthCard(m, activity.data);
+            container.appendChild(monthCard);
         }
-        heatmapContainer.appendChild(fragment);
-        scrollToEnd();
-
+        // Scroll to bottom/end
+        container.scrollLeft = container.scrollWidth;
     } else {
-        // Prepend: Load 6 months BEFORE earliestLoadedMonth
-        let current = earliestLoadedMonth.subtract(monthsLoading, 'month');
-        // Limit? optional.
-
-        // We need to render from (Earliest - 6) to (Earliest - 1)
-        const fragment = document.createDocumentFragment();
-
-        earliestLoadedMonth = current.clone(); // Update new earliest
-
-        for (let i = 0; i < monthsLoading; i++) {
-            const card = createMonthCard(current);
-            fragment.appendChild(card);
-            current = current.add(1, 'month');
+        // Render Month Grid (Year View) - Show Current + Past 2 Years
+        const currentYear = dayjs().year();
+        for (let i = 2; i >= 0; i--) {
+            const year = currentYear - i;
+            const yearCard = createMonthViewCard(year, activity.data);
+            container.appendChild(yearCard);
         }
-
-        // Prepend to container
-        heatmapContainer.insertBefore(fragment, heatmapContainer.firstChild);
+        // Scroll to bottom/end (Current Year)
+        // Need requestAnimationFrame or slight timeout for layout to stabilize? 
+        // Just setting it immediately usually works if DOM is synchronous, but images/fonts can affect it.
+        // Elements are div blocks so it should be fine.
+        container.scrollLeft = container.scrollWidth;
     }
 }
 
-function createMonthCard(monthStart) {
+function setCardView(triggerCard, triggerActivity, mode) {
+    // 1. Update Global State
+    viewMode = mode;
+    activities.forEach(a => a.viewMode = mode);
+    saveData();
+
+    // 2. Update UI for ALL cards
+    const allCards = document.querySelectorAll('.activity-card');
+    allCards.forEach(card => {
+        const id = card.dataset.id;
+        if (id) { // Skip "New Activity" card which has no ID
+            const activity = activities.find(a => a.id === id);
+            if (activity) {
+                renderCardHeatmap(card, activity);
+            }
+        }
+    });
+}
+
+
+
+function createMonthCard(monthStart, dataMap) {
     const card = document.createElement('div');
     card.className = 'view-card';
 
@@ -269,7 +513,7 @@ function createMonthCard(monthStart) {
     const grid = document.createElement('div');
     grid.className = 'calendar-grid';
 
-    // Headers (7 cells, separate from the 35-cell day grid)
+    // Headers
     ['M', 'T', 'W', 'T', 'F', 'S', 'S'].forEach(d => {
         const h = document.createElement('div');
         h.className = 'calendar-header';
@@ -277,36 +521,30 @@ function createMonthCard(monthStart) {
         grid.appendChild(h);
     });
 
-    const startDay = (monthStart.day() + 6) % 7; // 0=Mon, 6=Sun
-
-    // Check Previous Month for Overflow
+    const startDay = (monthStart.day() + 6) % 7;
     const prevMonth = monthStart.subtract(1, 'month');
     const prevDaysInMonth = prevMonth.daysInMonth();
     const prevStartDay = (prevMonth.day() + 6) % 7;
     const prevTotalSlots = prevStartDay + prevDaysInMonth;
-    const prevHasOverflow = prevTotalSlots > 35; // More than 5 rows (35 slots)
+    const prevHasOverflow = prevTotalSlots > 35;
 
-    // Render leading slots (either empty or overflow from prev month)
+    // Leading slots
     for (let i = 0; i < startDay; i++) {
         const dayNum = prevDaysInMonth - (startDay - 1 - i);
         const prevSlotIndex = prevStartDay + (dayNum - 1);
 
         if (prevHasOverflow && prevSlotIndex >= 35) {
-            // Render this overflow day
             const date = prevMonth.date(dayNum);
             const dateStr = date.format('YYYY-MM-DD');
-            const count = activityData[dateStr] || 0;
+            const count = dataMap[dateStr] || 0;
+            const level = getLevel(count, 'day');
 
             const cell = document.createElement('div');
             cell.className = 'calendar-cell prev-month';
             cell.textContent = dayNum;
-            cell.dataset.level = getLevel(count, 'day');
-            if (dateStr === dayjs().format('YYYY-MM-DD')) {
-                cell.style.border = '1px solid var(--accent-color)';
-            }
+            cell.dataset.level = level;
             grid.appendChild(cell);
         } else {
-            // Standard empty slot
             const empty = document.createElement('div');
             empty.className = 'calendar-cell empty';
             grid.appendChild(empty);
@@ -315,30 +553,22 @@ function createMonthCard(monthStart) {
 
     const daysInMonth = monthStart.daysInMonth();
     const todayStr = dayjs().format('YYYY-MM-DD');
-
-    // Render current month days
-    // We want to fill exactly 5 rows (35 cells) after the leading slots
-    // So we render min(daysInMonth, 35 - startDay) days
     const maxDaysToRender = Math.min(daysInMonth, 35 - startDay);
 
     for (let d = 1; d <= maxDaysToRender; d++) {
         const date = monthStart.date(d);
         const dateStr = date.format('YYYY-MM-DD');
-        const count = activityData[dateStr] || 0;
+        const count = dataMap[dateStr] || 0;
 
         const cell = document.createElement('div');
         cell.className = 'calendar-cell';
         cell.textContent = d;
         cell.dataset.level = getLevel(count, 'day');
-
-        if (dateStr === todayStr) {
-            cell.style.border = '1px solid var(--accent-color)';
-        }
-
+        if (dateStr === todayStr) cell.style.border = '1px solid var(--accent-color)';
         grid.appendChild(cell);
     }
 
-    // Fill remaining slots to complete 5 rows if needed
+    // Fill remaining
     const totalDayCells = startDay + maxDaysToRender;
     const remainingSlots = 35 - totalDayCells;
     for (let i = 0; i < remainingSlots; i++) {
@@ -352,37 +582,7 @@ function createMonthCard(monthStart) {
 }
 
 
-function renderMonthSwiper(isInitial) {
-    const yearsLoading = 3;
-
-    if (isInitial) {
-        // Initial: Load last 3 years
-        let currentYear = dayjs().year() - 2;
-        earliestLoadedYear = currentYear;
-
-        const fragment = document.createDocumentFragment();
-        for (let i = 0; i < 3; i++) {
-            fragment.appendChild(createMonthViewCard(currentYear));
-            currentYear++;
-        }
-        heatmapContainer.appendChild(fragment);
-        scrollToEnd();
-
-    } else {
-        // Prepend: Load 3 years BEFORE earliest
-        let currentYear = earliestLoadedYear - yearsLoading;
-        earliestLoadedYear = currentYear; // update
-
-        const fragment = document.createDocumentFragment();
-        for (let i = 0; i < yearsLoading; i++) {
-            fragment.appendChild(createMonthViewCard(currentYear));
-            currentYear++;
-        }
-        heatmapContainer.insertBefore(fragment, heatmapContainer.firstChild);
-    }
-}
-
-function createMonthViewCard(year) {
+function createMonthViewCard(year, dataMap) {
     const card = document.createElement('div');
     card.className = 'view-card';
 
@@ -423,7 +623,7 @@ function createMonthViewCard(year) {
                 let end = Math.min(chunk.e, daysInMonth);
                 for (let d = chunk.s; d <= end; d++) {
                     const ds = monthStart.date(d).format('YYYY-MM-DD');
-                    weekCount += (activityData[ds] || 0);
+                    weekCount += (dataMap[ds] || 0); // FIXED: use dataMap
                 }
                 cell.dataset.level = getLevel(weekCount, 'week');
                 cell.title = `${monthStart.format('MMM')} W${Math.ceil(chunk.s / 7)}: ${weekCount}`;
@@ -482,71 +682,68 @@ function setView(mode) {
 }
 
 
-function exportTimeline() {
-    const originalIcon = shareBtn.innerHTML;
-    // Loading State (Spinner)
-    shareBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="animate-spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>`;
+// Export Logic
+function exportCardTimeline(card, activity) {
+    const shareBtn = card.querySelector('.share-btn');
+    if (!shareBtn) return;
 
-    // Add a spin animation style if not present, or just rely on visual change.
-    // simpler: just change opacity or color if no CSS animation.
+    const originalIcon = shareBtn.innerHTML;
+    // Loading Spinner
+    shareBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="animate-spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>`;
     shareBtn.style.opacity = '0.7';
 
-
-    html2canvas(captureArea, {
-        backgroundColor: '#0f172a', // App background color
-        scale: 2, // Higher resolution
+    // Target the specific activity card for capture
+    // visual tweak: We might want to capture just the card content.
+    html2canvas(card, {
+        backgroundColor: '#0f172a',
+        scale: 2,
         onclone: (clonedDoc) => {
-            // Layout Cleanups for Share Image
-            const app = clonedDoc.querySelector('.app-container');
-            const header = clonedDoc.querySelector('.heatmap-header');
+            const clonedCard = clonedDoc.querySelector(`[data-id="${activity.id}"]`);
+            if (clonedCard) {
+                // Layout Cleanups for Share Image
 
-            // Hide the entire heatmap header (Title, Toggles, Share Btn)
-            if (header) header.style.display = 'none';
+                // Hide Header Controls (Toggle, Share Btn) inside THIS card
+                const header = clonedCard.querySelector('.heatmap-header');
+                if (header) header.style.display = 'none';
 
-            // Reduce vertical whitespace and ensure consistent padding
-            if (app) {
-                // IMPORTANT: Override all sizing constraints to "hug" content
-                app.style.height = 'auto';
-                app.style.minHeight = '0';
-                app.style.width = 'auto'; // allow shrinkage
-                app.style.maxWidth = '480px';
+                // Adjust Styles for Snapshot
+                clonedCard.style.padding = '24px';
+                clonedCard.style.width = 'auto';
+                clonedCard.style.maxWidth = '480px';
+                clonedCard.style.height = 'auto'; // Hug content
+                clonedCard.style.border = 'none'; // Optional
+                clonedCard.style.background = '#0f172a';
 
-                // Uniform padding around the content
-                app.style.padding = '24px';
-
-                app.style.gap = '16px';
-                app.style.justifyContent = 'flex-start';
-                app.style.flexGrow = '0';
+                // Ensure heatmap-scroll is fully expanded? 
+                // It might need overflow: visible
+                const scroll = clonedCard.querySelector('.heatmap-scroll');
+                if (scroll) {
+                    scroll.style.overflow = 'visible';
+                    scroll.style.height = 'auto';
+                }
             }
-
-            // Ensure body allows shrinking
-            clonedDoc.body.style.minHeight = '0';
-            clonedDoc.body.style.height = 'auto';
-            clonedDoc.documentElement.style.height = 'auto';
         },
         ignoreElements: (element) => {
-            // Exclude the Cat
-            if (element.id === 'cat-wrapper') return true;
+            // Exclude "New Activity" button if somehow visible? No.
+            // Exclude Cat? The cat is outside the card in `cat-wrapper`, so it won't be captured if we capture `card`.
+            // Perfect.
             return false;
         }
     }).then(canvas => {
-        // Create download link
         const link = document.createElement('a');
-        link.download = `my-activity-${dayjs().format('YYYYMMDD')}.png`;
+        link.download = `${activity.name.replace(/\s+/g, '-').toLowerCase()}-${dayjs().format('YYYYMMDD')}.png`;
         link.href = canvas.toDataURL();
         link.click();
 
-        // Restore
         shareBtn.innerHTML = originalIcon;
         shareBtn.style.opacity = '1';
     }).catch(err => {
         console.error(err);
-        shareBtn.innerHTML = originalIcon; // Restore on error too
+        shareBtn.innerHTML = originalIcon;
         shareBtn.style.opacity = '1';
         alert('Failed to generate image');
     });
 }
-
 
 // Run
 init();

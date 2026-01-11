@@ -21,16 +21,6 @@
         </header>
 
         <main>
-            <div class="stats-card">
-                <div class="stat-item">
-                    <span class="stat-value" id="total-count">0</span>
-                    <span class="stat-label">Total Check-ins</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-value" id="current-streak">0</span>
-                    <span class="stat-label">Current Streak</span>
-                </div>
-            </div>
 
             <!-- Cat Check-in Interaction -->
             <div id="cat-wrapper" class="cat-wrapper">
@@ -71,50 +61,35 @@
                 </div>
             </div>
 
-            <div class="heatmap-container" id="capture-area">
-                <div class="heatmap-header">
-                    <div class="header-left">
-                        <h3>Activity Map</h3>
-                        <div class="view-toggles">
-                            <span id="view-day" class="toggle-option active">Day</span>
-                            <span class="toggle-divider">/</span>
-                            <span id="view-month" class="toggle-option">Month</span>
-                        </div>
+            <!-- Main Content (Swiper / Carousel) -->
+            <div id="swiper-wrapper">
+                <div id="swiper-container">
+                    <!-- Activity Cards will be injected here by JS -->
+                    <!-- Example structure for reference:
+                    <div class="activity-card">
+                        <div class="stats-card">...</div>
+                        <div class="heatmap-container">...</div>
                     </div>
-                    <button id="share-btn" class="icon-button" title="Share Snapshot">
-                        <!-- Simple Share Icon SVG -->
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
-                            <polyline points="16 6 12 2 8 6"></polyline>
-                            <line x1="12" y1="2" x2="12" y2="15"></line>
-                        </svg>
-                    </button>
-                    <!-- Legend moved to bottom or kept here? The requester said 'whitespace between heatmap and button is weird' 
-                         Let's keep legend here for now but maybe make it cleaner. 
-                         Actually, let's keep the legend as is but make the header flex. 
                     -->
                 </div>
-                <div class="legend-container">
-                    <span class="legend-label">Less</span>
-                    <div class="legend-scale">
-                        <div class="level level-0"></div>
-                        <div class="level level-1"></div>
-                        <div class="level level-2"></div>
-                        <div class="level level-3"></div>
-                        <div class="level level-4"></div>
-                    </div>
-                    <span class="legend-label">More</span>
-                </div>
-
-                <div class="heatmap-scroll">
-                    <div id="heatmap-grid" class="heatmap-grid">
-                        <!-- Grid injected by JS -->
-                    </div>
-                </div>
+                <!-- Pagination / Indicators (Optional) -->
+                <div class="swiper-pagination"></div>
             </div>
         </main>
     </div>
+    <!-- Add Activity Modal -->
+    <div class="modal-overlay" id="add-activity-modal">
+        <div class="modal-content">
+            <h3 class="modal-title">New Activity</h3>
+            <input type="text" class="modal-input" id="activity-name-input" placeholder="e.g. Morning Run"
+                maxlength="20">
+            <div class="modal-actions">
+                <button class="modal-btn modal-btn-cancel" id="modal-cancel">Cancel</button>
+                <button class="modal-btn modal-btn-confirm" id="modal-confirm">Create</button>
+            </div>
+        </div>
+    </div>
+
     <script src="script.js"></script>
 </body>
 

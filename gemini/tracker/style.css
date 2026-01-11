@@ -62,31 +62,184 @@ h1 {
     margin-top: 4px;
 }
 
-.stats-card {
+/* --- Swiper / Multi-Activity Layout --- */
+#swiper-wrapper {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
     display: flex;
-    justify-content: space-around;
-    background: var(--card-bg);
-    padding: 20px;
-    border-radius: 16px;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    flex-direction: column;
+    position: relative;
+    /* Context for pagination */
+    padding-bottom: 40px;
+    /* Reserve space for pagination below cards */
 }
 
+#swiper-container {
+    flex: 1;
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    /* Smooth scroll iOS */
+    scroll-behavior: smooth;
+    gap: 16px;
+    padding: 0 16px;
+    /* Horizontal padding for visual comfort */
+    scrollbar-width: none;
+    /* Hide scrollbar Firefox */
+}
+
+#swiper-container::-webkit-scrollbar {
+    display: none;
+    /* Hide scrollbar Chrome/Safari */
+}
+
+.activity-card {
+    scroll-snap-align: center;
+    flex: 0 0 100%;
+    /* Full width cards */
+    width: 100%;
+    /* height: 100%; */
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    /* Merged look */
+    background: transparent;
+    /* Card background is transparent, content has structure */
+    position: relative;
+    padding: 10px 0;
+    /* Add some vertical breathing room if needed, or keeping it strict */
+}
+
+.activity-header {
+    text-align: center;
+    margin-bottom: 8px;
+    /* This header is actually removed in JS, so fine */
+}
+
+.activity-header h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+    color: var(--text-primary);
+}
+
+/* Stats Card */
+.stats-card {
+    background: var(--card-bg);
+    border-radius: 16px;
+    padding: 24px 20px 20px 20px;
+    display: flex;
+    flex-direction: column;
+    /* Changed to column */
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    /* Space between title and stats */
+    border: 1px solid var(--border-color);
+    /* Remove bottom shadow: shifting offset to top (-4px) */
+    box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1);
+    margin-bottom: 0;
+    /* No gap below */
+    position: relative;
+    z-index: 10;
+    /* Sit on top */
+}
+
+.stats-title {
+    font-size: 1.5rem;
+    /* Slightly larger for main card title? Or 1.1rem as requested? User said "unchanged". 1.1rem seems small for a simplified card. But I will stick to "unchanged" logic first, or maybe inherit? The user said "keep current font same". Current was 1.1rem in header. */
+    /* Wait, the "Activity Tracker" h1 is 2rem. The heatmap h3 was 1.1rem. */
+    font-size: 1.25rem;
+    /* Let's bump slightly or keep 1.1rem? User said "unchanged". Okay -> 1.1rem. Actually I'll use the .heatmap-header h3 style. */
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin: 0;
+    color: var(--text-primary);
+    width: 100%;
+    text-align: left;
+    /* Or center? Stats are centered. Let's Center it for the card. */
+    text-align: center;
+}
+
+.stats-row {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    width: 100%;
+}
+
+/* Heatmap Container */
+.heatmap-container {
+    /* flex: 1; */
+    background: var(--card-bg);
+    border-radius: 16px;
+    padding: 24px 20px 20px 20px;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    width: 100%;
+    border: 1px solid var(--border-color);
+    /* Remove top shadow: shifting offset to bottom (4px) */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    margin-top: 0;
+    position: relative;
+    z-index: 5;
+}
+
+/* "New Activity" Card Styling */
+.activity-card.new-activity-card {
+    justify-content: center;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 16px;
+    border: 2px dashed var(--border-color);
+    cursor: pointer;
+    transition: all 0.2s;
+    min-height: 520px;
+    /* Match typical populated card height */
+}
+
+
+.activity-card.new-activity-card:active {
+    background: rgba(255, 255, 255, 0.06);
+    transform: scale(0.98);
+}
+
+.add-button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    color: var(--text-secondary);
+}
+
+.add-button svg {
+    width: 48px;
+    height: 48px;
+    stroke: var(--text-secondary);
+}
+
+/* Stats Typography */
 .stat-item {
     display: flex;
     flex-direction: column;
     align-items: center;
+    gap: 4px;
 }
 
 .stat-value {
-    font-size: 1.5rem;
+    font-size: 2rem;
     font-weight: 700;
     color: var(--accent-color);
+    line-height: 1;
 }
 
 .stat-label {
-    font-size: 0.875rem;
+    font-size: 0.85rem;
     color: var(--text-secondary);
-    margin-top: 4px;
+    font-weight: 500;
 }
 
 /* Cat Interaction */
@@ -204,15 +357,7 @@ h1 {
     opacity: 1;
 }
 
-.heatmap-container {
-    background: var(--card-bg);
-    padding: 20px;
-    border-radius: 16px;
-    overflow: hidden;
-    /* Contains the heatmap */
-    flex-grow: 0;
-    height: auto;
-}
+
 
 /* ... header styles ... */
 
@@ -301,10 +446,10 @@ h1 {
 }
 
 /* Base level styles for legend */
-.level {
-    width: 10px;
-    height: 10px;
-    border-radius: 2px;
+.legend-box {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
 }
 
 .level-0 {
@@ -338,6 +483,8 @@ h1 {
     scrollbar-width: thin;
     /* Show scrollbar for easier nav on desktop? Or hidden as per design. */
     scrollbar-color: var(--text-secondary) transparent;
+    overscroll-behavior-x: contain;
+    /* Prevents scroll chaining to parent swiper */
 }
 
 /* Hide scrollbar but keep functionality */
@@ -499,4 +646,136 @@ h1 {
 
 .week-cell:hover {
     opacity: 0.8;
+}
+
+/* Pagination */
+.swiper-pagination {
+    position: absolute;
+    bottom: 15px;
+    /* Above the FAB/Cat usually, or aligned */
+    left: 0;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    z-index: 10;
+    pointer-events: none;
+}
+
+.swiper-pagination-bullet {
+    width: 8px;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    pointer-events: auto;
+}
+
+.swiper-pagination-bullet-active {
+    background: var(--accent-color);
+    transform: scale(1.2);
+}
+
+/* Modal */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.8);
+    /* Dark blur backdrop */
+    backdrop-filter: blur(4px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+}
+
+.modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal-content {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    padding: 24px;
+    border-radius: 20px;
+    width: 90%;
+    max-width: 320px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+    transform: scale(0.9);
+    transition: all 0.2s ease;
+}
+
+.modal-overlay.active .modal-content {
+    transform: scale(1);
+}
+
+.modal-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 16px;
+    text-align: center;
+    margin-top: 0;
+}
+
+.modal-input {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    padding: 12px 16px;
+    border-radius: 12px;
+    color: var(--text-primary);
+    font-size: 1rem;
+    outline: none;
+    margin-bottom: 20px;
+    font-family: inherit;
+}
+
+.modal-input:focus {
+    border-color: var(--accent-color);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.modal-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.modal-btn {
+    flex: 1;
+    padding: 12px;
+    border-radius: 12px;
+    border: none;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.modal-btn-cancel {
+    background: transparent;
+    color: var(--text-secondary);
+}
+
+.modal-btn-cancel:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+}
+
+.modal-btn-confirm {
+    background: var(--accent-color);
+    color: #0f172a;
+    /* Dark text on bright button */
+}
+
+.modal-btn-confirm:hover {
+    filter: brightness(1.1);
 }
