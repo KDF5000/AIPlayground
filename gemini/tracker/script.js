@@ -7,7 +7,6 @@ let viewMode = 'day'; // Global default, but cards track their own
 let isLoadingHistory = false;
 let earliestLoadedMonth = null;
 let earliestLoadedYear = null;
-
 let swiperObserver = null;
 let selectedDate = null; // Track selected date for retroactive check-in
 
@@ -356,9 +355,19 @@ function initCat() {
 // Logic: Check-in
 function logWorkout() {
     const today = dayjs().format('YYYY-MM-DD');
-    const targetDate = selectedDate || today;
     const currentActivity = getCurrentActivity();
     const data = currentActivity.data;
+
+    let targetDate = today;
+    if (selectedDate) {
+        targetDate = selectedDate;
+        // Verify it's not future
+        if (dayjs(targetDate).isAfter(dayjs(), 'day')) {
+            // Should be prevented by UI but safe check
+            alert("Cannot check in for future dates!");
+            return;
+        }
+    }
 
     // Shake animation
     catWrapper.classList.add('shaking');
@@ -376,11 +385,8 @@ function logWorkout() {
     // Save
     saveData(); // Saves the whole activities array
 
-    // Clear selection after action
-    if (selectedDate) {
-        selectedDate = null;
-        // Optional: Toast or UI feedback "Filled for [Date]"
-    }
+    // Clear selection
+    selectedDate = null;
 
     // Respawn Cat
     initCat();
@@ -392,31 +398,6 @@ function logWorkout() {
         renderCardHeatmap(activeCard, currentActivity);
     }
 }
-
-// Handle date selection from calendar
-function handleDateSelection(dateStr) {
-    const today = dayjs().format('YYYY-MM-DD');
-    if (dayjs(dateStr).isAfter(dayjs(), 'day')) {
-        alert("Cannot check in for future dates!");
-        return;
-    }
-
-    // Toggle selection
-    if (selectedDate === dateStr) {
-        selectedDate = null;
-    } else {
-        selectedDate = dateStr;
-    }
-
-    // Re-render UI to show selection
-    const currentActivity = getCurrentActivity();
-    const card = document.querySelector(`.activity-card[data-id="${currentActivity.id}"]`);
-    if (card) {
-        renderCardHeatmap(card, currentActivity);
-    }
-}
-
-
 
 // Logic: Save to LocalStorage
 function saveData() {
@@ -493,13 +474,15 @@ function renderCardHeatmap(card, activity) {
         // Render current month plus previous 2
         for (let i = 2; i >= 0; i--) {
             const m = currentMonth.subtract(i, 'month');
-            const monthCard = createMonthCard(m, activity.data, (dateStr) => {
-                handleDateSelection(dateStr);
+            const monthCard = createMonthCard(m, activity.data, (dateStr, cellElement) => {
+                handleDateSelection(dateStr, cellElement);
             });
             container.appendChild(monthCard);
         }
         // Scroll to bottom/end
-        container.scrollLeft = container.scrollWidth;
+        setTimeout(() => {
+            container.scrollLeft = container.scrollWidth;
+        }, 10);
     } else {
         // Render Month Grid (Year View) - Show Current + Past 2 Years
         const currentYear = dayjs().year();
@@ -512,7 +495,9 @@ function renderCardHeatmap(card, activity) {
         // Need requestAnimationFrame or slight timeout for layout to stabilize? 
         // Just setting it immediately usually works if DOM is synchronous, but images/fonts can affect it.
         // Elements are div blocks so it should be fine.
-        container.scrollLeft = container.scrollWidth;
+        setTimeout(() => {
+            container.scrollLeft = container.scrollWidth;
+        }, 10);
     }
 }
 
@@ -601,12 +586,11 @@ function createMonthCard(monthStart, dataMap, onDateClick) {
         cell.textContent = d;
         cell.dataset.level = getLevel(count, 'day');
         if (dateStr === todayStr) cell.style.border = '1px solid var(--accent-color)';
-        if (selectedDate === dateStr) cell.classList.add('selected'); // Highlight selected date
 
         // Add click listener for retroactive check-in
         cell.style.cursor = 'pointer';
-        cell.addEventListener('click', () => {
-            if (onDateClick) onDateClick(dateStr);
+        cell.addEventListener('click', (e) => {
+            if (onDateClick) onDateClick(dateStr, e.target);
         });
 
         grid.appendChild(cell);
@@ -625,26 +609,27 @@ function createMonthCard(monthStart, dataMap, onDateClick) {
     return card;
 }
 
-function logHistoryWorkout(activity, dateStr) {
-    const today = dayjs().format('YYYY-MM-DD');
+function handleDateSelection(dateStr, cellElement) {
+    // 1. Check if future
     if (dayjs(dateStr).isAfter(dayjs(), 'day')) {
         alert("Cannot check in for future dates!");
         return;
     }
 
-    if (!activity.data[dateStr]) {
-        activity.data[dateStr] = 1;
+    // 2. Toggle Selection
+    if (selectedDate === dateStr) {
+        // Deselect
+        selectedDate = null;
+        cellElement.classList.remove('selected');
     } else {
-        activity.data[dateStr]++;
-    }
+        // Select new
+        selectedDate = dateStr;
 
-    saveData();
+        // Remove 'selected' from all other cells
+        document.querySelectorAll('.calendar-cell.selected').forEach(el => el.classList.remove('selected'));
 
-    // Refresh UI
-    const card = document.querySelector(`.activity-card[data-id="${activity.id}"]`);
-    if (card) {
-        updateCardStats(card, activity);
-        renderCardHeatmap(card, activity);
+        // Add to clicked
+        cellElement.classList.add('selected');
     }
 }
 

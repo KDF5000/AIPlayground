@@ -602,16 +602,6 @@ h1 {
     animation: spin 1s linear infinite;
 }
 
-/* Selected Day for Retroactive Check-in */
-.calendar-cell.selected {
-    border: 2px solid var(--accent-color);
-    box-shadow: 0 0 10px var(--accent-glow);
-    transform: scale(1.1);
-    z-index: 2;
-    /* Pop out */
-    background-color: rgba(56, 189, 248, 0.2);
-}
-
 /* MONTH VIEW (12-month grid) */
 .month-grid {
     display: grid;
@@ -656,6 +646,13 @@ h1 {
 
 .week-cell:hover {
     opacity: 0.8;
+}
+
+.calendar-cell.selected {
+    border: 2px solid var(--accent-color) !important;
+    background-color: rgba(56, 189, 248, 0.2);
+    transform: scale(1.1);
+    z-index: 10;
 }
 
 /* Pagination */
