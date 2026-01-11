@@ -16,7 +16,7 @@ const shareBtn = document.getElementById('share-btn');
 // Capture the full app container to include Header + Stats
 const captureArea = document.querySelector('.app-container');
 const viewToggleDay = document.getElementById('view-day');
-const viewToggleYear = document.getElementById('view-year');
+const viewToggleMonth = document.getElementById('view-month');
 
 // ... (existing code)
 
@@ -46,11 +46,12 @@ function init() {
 }
 
 function initCat() {
-    // Random side: 0 = left, 1 = right
-    const side = Math.random() < 0.5 ? 'left' : 'right';
+    // Always on left side for easier mobile thumb reach
+    const side = 'left';
 
-    // Random height: between 10% and 40% from bottom (to avoid header)
-    const bottomPos = 10 + Math.random() * 30;
+    // Random height: between 30% and 60% from bottom
+    // This range is optimal for thumb reach on mobile devices
+    const bottomPos = 30 + Math.random() * 30;
 
     catWrapper.className = `cat-wrapper pos-${side}`;
     catWrapper.style.bottom = `${bottomPos}%`;
@@ -156,7 +157,7 @@ function setupListeners() {
     shareBtn.addEventListener('click', exportTimeline);
 
     viewToggleDay.addEventListener('click', () => setView('day'));
-    viewToggleYear.addEventListener('click', () => setView('year'));
+    viewToggleMonth.addEventListener('click', () => setView('month'));
 
     // Infinite Scroll Listener
     heatmapContainer.addEventListener('scroll', handleScroll);
@@ -186,7 +187,7 @@ function renderHeatmap() {
         renderCalendarSwiper(true); // true = initial load
         updateLegend('day');
     } else {
-        renderYearSwiper(true);
+        renderMonthSwiper(true);
         updateLegend('week');
     }
 }
@@ -199,7 +200,7 @@ function prependHistory() {
     if (viewMode === 'day') {
         renderCalendarSwiper(false); // false = prepend
     } else {
-        renderYearSwiper(false);
+        renderMonthSwiper(false);
     }
 
     // Adjust scroll position to maintain view
@@ -268,7 +269,7 @@ function createMonthCard(monthStart) {
     const grid = document.createElement('div');
     grid.className = 'calendar-grid';
 
-    // Headers
+    // Headers (7 cells, separate from the 35-cell day grid)
     ['M', 'T', 'W', 'T', 'F', 'S', 'S'].forEach(d => {
         const h = document.createElement('div');
         h.className = 'calendar-header';
@@ -287,14 +288,7 @@ function createMonthCard(monthStart) {
 
     // Render leading slots (either empty or overflow from prev month)
     for (let i = 0; i < startDay; i++) {
-        // Calculate which day of prev month this slot represents
-        // The last slot (startDay - 1) is prevMonth last day.
-        // The slot (i) is: prevDaysInMonth - (startDay - 1 - i)
         const dayNum = prevDaysInMonth - (startDay - 1 - i);
-
-        // logic: Is this specific day part of the overflow?
-        // Overflow days are those with index >= 35 in the PREV month's grid.
-        // Prev grid index for dayNum: prevStartDay + (dayNum - 1)
         const prevSlotIndex = prevStartDay + (dayNum - 1);
 
         if (prevHasOverflow && prevSlotIndex >= 35) {
@@ -322,12 +316,12 @@ function createMonthCard(monthStart) {
     const daysInMonth = monthStart.daysInMonth();
     const todayStr = dayjs().format('YYYY-MM-DD');
 
-    for (let d = 1; d <= daysInMonth; d++) {
-        // Stop if we exceed 5 rows (35 slots)
-        // Current index in THIS grid:
-        const currentSlotIndex = startDay + (d - 1);
-        if (currentSlotIndex >= 35) break;
+    // Render current month days
+    // We want to fill exactly 5 rows (35 cells) after the leading slots
+    // So we render min(daysInMonth, 35 - startDay) days
+    const maxDaysToRender = Math.min(daysInMonth, 35 - startDay);
 
+    for (let d = 1; d <= maxDaysToRender; d++) {
         const date = monthStart.date(d);
         const dateStr = date.format('YYYY-MM-DD');
         const count = activityData[dateStr] || 0;
@@ -344,12 +338,21 @@ function createMonthCard(monthStart) {
         grid.appendChild(cell);
     }
 
+    // Fill remaining slots to complete 5 rows if needed
+    const totalDayCells = startDay + maxDaysToRender;
+    const remainingSlots = 35 - totalDayCells;
+    for (let i = 0; i < remainingSlots; i++) {
+        const empty = document.createElement('div');
+        empty.className = 'calendar-cell empty';
+        grid.appendChild(empty);
+    }
+
     card.appendChild(grid);
     return card;
 }
 
 
-function renderYearSwiper(isInitial) {
+function renderMonthSwiper(isInitial) {
     const yearsLoading = 3;
 
     if (isInitial) {
@@ -359,7 +362,7 @@ function renderYearSwiper(isInitial) {
 
         const fragment = document.createDocumentFragment();
         for (let i = 0; i < 3; i++) {
-            fragment.appendChild(createYearCard(currentYear));
+            fragment.appendChild(createMonthViewCard(currentYear));
             currentYear++;
         }
         heatmapContainer.appendChild(fragment);
@@ -372,14 +375,14 @@ function renderYearSwiper(isInitial) {
 
         const fragment = document.createDocumentFragment();
         for (let i = 0; i < yearsLoading; i++) {
-            fragment.appendChild(createYearCard(currentYear));
+            fragment.appendChild(createMonthViewCard(currentYear));
             currentYear++;
         }
         heatmapContainer.insertBefore(fragment, heatmapContainer.firstChild);
     }
 }
 
-function createYearCard(year) {
+function createMonthViewCard(year) {
     const card = document.createElement('div');
     card.className = 'view-card';
 
@@ -389,11 +392,11 @@ function createYearCard(year) {
     card.appendChild(title);
 
     const grid = document.createElement('div');
-    grid.className = 'year-grid';
+    grid.className = 'month-grid';
 
     for (let m = 0; m < 12; m++) {
         const col = document.createElement('div');
-        col.className = 'year-column';
+        col.className = 'month-column';
 
         const monthStart = dayjs(`${year}-${m + 1}-01`);
         const label = document.createElement('div');
@@ -469,9 +472,9 @@ function setView(mode) {
 
     if (mode === 'day') {
         viewToggleDay.classList.add('active');
-        viewToggleYear.classList.remove('active');
+        viewToggleMonth.classList.remove('active');
     } else {
-        viewToggleYear.classList.add('active');
+        viewToggleMonth.classList.add('active');
         viewToggleDay.classList.remove('active');
     }
 
