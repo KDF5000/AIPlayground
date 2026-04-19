@@ -1,0 +1,202 @@
+<!-- index.wxml -->
+<view class="app-container">
+  <header>
+    <text class="h1">Activity Tracker</text>
+    <text class="subtitle">Consistency is key</text>
+  </header>
+
+  <!-- Swiper -->
+  <view id="swiper-wrapper">
+    <swiper 
+      current="{{swiperIndex}}" 
+      bindchange="onSwiperChange"
+      indicator-dots="{{false}}"
+      previous-margin="0px"
+      next-margin="0px"
+      style="height: {{swiperHeight}}px; transition: height 0.3s;"
+    >
+      <!-- Activity Slides -->
+      <block wx:for="{{activities}}" wx:key="id" wx:for-item="activity">
+        <swiper-item>
+          <view class="activity-card" id="card-{{index}}">
+            
+            <!-- Stats -->
+            <view class="stats-card">
+              <text class="stats-title">{{activity.name}}</text>
+              <view class="stats-row">
+                <view class="stat-item">
+                  <text class="stat-value">{{activity.stats.total}}</text>
+                  <text class="stat-label">Total Check-ins</text>
+                </view>
+                <view class="stat-item">
+                  <text class="stat-value">{{activity.stats.days}}</text>
+                  <text class="stat-label">Days Active</text>
+                </view>
+              </view>
+            </view>
+
+            <!-- Heatmap -->
+            <view class="heatmap-container">
+              <view class="heatmap-header">
+                <view class="header-left">
+                  <view class="view-toggles">
+                    <text class="toggle-option {{activity.viewMode === 'day' ? 'active' : ''}}" 
+                          bindtap="toggleViewMode" 
+                          data-id="{{activity.id}}" 
+                          data-mode="day">Day</text>
+                    <text class="toggle-divider">/</text>
+                    <text class="toggle-option {{activity.viewMode === 'month' ? 'active' : ''}}" 
+                          bindtap="toggleViewMode" 
+                          data-id="{{activity.id}}" 
+                          data-mode="month">Month</text>
+                  </view>
+                </view>
+                <!-- Share Button -->
+                <view class="icon-button" bindtap="onShareTap">
+                   <image src="/assets/share.svg" style="width:16px; height:16px;" />
+                </view>
+              </view>
+
+              <!-- Scrollable Grid Area -->
+              <!-- Use scroll-view for horizontal scrolling of months/years -->
+              <scroll-view 
+                class="heatmap-scroll" 
+                scroll-x="true" 
+                enable-flex="true"
+                scroll-with-animation="true"
+                scroll-left="10000"
+                paging-enabled="true"
+              >
+                
+                <!-- DAY VIEW -->
+                <block wx:if="{{activity.viewMode === 'day'}}">
+                   <block wx:for="{{activity.heatmap.months}}" wx:for-item="month" wx:key="title">
+                      <view class="view-card">
+                        <view class="view-header">
+                           <text class="view-title">{{month.title}}</text>
+                           <view class="mini-legend">
+                              <text class="legend-label">Less</text>
+                              <view class="legend-scale">
+                                <view class="legend-box level-0"></view>
+                                <view class="legend-box level-1"></view>
+                                <view class="legend-box level-2"></view>
+                                <view class="legend-box level-3"></view>
+                                <view class="legend-box level-4"></view>
+                              </view>
+                              <text class="legend-label">More</text>
+                           </view>
+                        </view>
+                        <view class="calendar-grid">
+                           <view class="calendar-header" wx:for="{{['M','T','W','T','F','S','S']}}" wx:key="*this">{{item}}</view>
+                           <!-- Cells -->
+                           <block wx:for="{{month.cells}}" wx:for-item="cell" wx:key="date">
+                              <view 
+                                class="calendar-cell {{cell.type === 'empty' ? 'empty' : ''}} {{cell.type === 'prev-month' ? 'prev-month' : ''}} {{selectedDate === cell.date ? 'selected' : ''}}" 
+                                data-level="{{cell.level}}"
+                                style="{{cell.type !== 'empty' ? ('background-color: var(--level-' + cell.level + '-v2); color: white;') : ''}} {{cell.isToday ? 'border: 1px solid var(--accent-color);' : ''}}"
+                                bindtap="onDayTap"
+                                data-date="{{cell.date}}"
+                                data-id="{{activity.id}}"
+                              >
+                                {{cell.type === 'day' || cell.type === 'prev-month' ? cell.day : ''}}
+                              </view>
+                           </block>
+                        </view>
+                      </view>
+                   </block>
+                </block>
+
+                <!-- MONTH VIEW -->
+                <block wx:else>
+                   <block wx:for="{{activity.heatmap.years}}" wx:for-item="year" wx:key="title">
+                      <view class="view-card">
+                         <view class="view-header">
+                           <text class="view-title">{{year.title}}</text>
+                           <view class="mini-legend">
+                              <text class="legend-label">Less</text>
+                              <view class="legend-scale">
+                                <view class="legend-box level-0"></view>
+                                <view class="legend-box level-1"></view>
+                                <view class="legend-box level-2"></view>
+                                <view class="legend-box level-3"></view>
+                                <view class="legend-box level-4"></view>
+                              </view>
+                              <text class="legend-label">More</text>
+                           </view>
+                         </view>
+                         <view class="month-grid">
+                            <block wx:for="{{year.columns}}" wx:for-item="col" wx:key="label">
+                               <view class="month-column">
+                                  <text class="month-label">{{col.label}}</text>
+                                  <block wx:for="{{col.weeks}}" wx:for-item="week" wx:key="index">
+                                      <view 
+                                        class="week-cell" 
+                                        data-level="{{week.level}}"
+                                        style="background-color: var(--level-{{week.level}}-v2); opacity: {{week.opacity}};"
+                                      ></view>
+                                  </block>
+                               </view>
+                            </block>
+                         </view>
+                      </view>
+                   </block>
+                </block>
+
+              </scroll-view> 
+            </view>
+          </view>
+        </swiper-item>
+      </block>
+
+      <!-- Add Activity Slide -->
+      <swiper-item>
+        <view class="activity-card new-activity-card" id="card-new" bindtap="openAddModal">
+           <view class="new-activity-inner" hover-class="new-activity-inner-hover">
+              <view class="add-button">
+                 <image src="/assets/add.svg" class="add-button-icon" />
+                 <text>New Activity</text>
+              </view>
+           </view>
+        </view>
+      </swiper-item>
+
+    </swiper>
+
+    <!-- Pagination Dots -->
+    <view class="swiper-pagination">
+       <block wx:for="{{activities}}" wx:key="id">
+          <view class="swiper-pagination-bullet {{index === swiperIndex ? 'swiper-pagination-bullet-active' : ''}}"></view>
+       </block>
+       <!-- Dot for Add Card -->
+       <view class="swiper-pagination-bullet {{activities.length === swiperIndex ? 'swiper-pagination-bullet-active' : ''}}"></view>
+    </view>
+  </view>
+
+  <!-- Cat -->
+  <view class="cat-wrapper {{catClass}} {{isShaking ? 'shaking' : ''}}" style="{{catStyle}}">
+      <view class="cat-character" bindtap="onCatTap">
+         <image src="/assets/cat.svg" class="cat-svg" />
+         <!-- Hint -->
+         <view class="cat-hint {{selectedDate ? 'hint-visible' : ''}}">Check in!</view>
+      </view>
+  </view>
+
+  <!-- Modal -->
+  <view class="modal-overlay active" wx:if="{{addModalVisible}}" bindtap="closeAddModal">
+      <view class="modal-content" catchtap="preventBubbling"> <!-- Stop bubbling to overlay -->
+         <view class="modal-title">New Activity</view>
+         <input 
+            class="modal-input" 
+            placeholder="e.g. Morning Run" 
+            placeholder-style="color: #94a3b8;" 
+            value="{{newActivityName}}" 
+            bindinput="onInputName"
+         />
+         <view class="modal-actions">
+           <button class="modal-btn modal-btn-cancel" catchtap="closeAddModal">Cancel</button>
+           <button class="modal-btn modal-btn-confirm" catchtap="confirmAddActivity">Create</button>
+         </view>
+      </view>
+  </view>
+
+</view>

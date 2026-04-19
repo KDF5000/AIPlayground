@@ -1,0 +1,585 @@
+/** index.wxss **/
+.app-container {
+    width: 100%;
+    /* max-width: 480px;  In Mini Program, we usually let it fill width, or use auto */
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    padding-bottom: 120px;
+}
+
+header {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.h1 {
+    font-weight: 700;
+    font-size: 2rem;
+    letter-spacing: -0.02em;
+    display: block;
+}
+
+.subtitle {
+    color: var(--text-secondary);
+    font-size: 1rem;
+    margin-top: 4px;
+    display: block;
+}
+
+/* --- Swiper / Multi-Activity Layout --- */
+#swiper-wrapper {
+    width: 100%;
+    min-height: 100%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    padding-bottom: 20px;
+}
+
+/* We will use a native swiper component, but if we used scroll-view: */
+.swiper-container-scroll {
+    display: flex;
+    flex-direction: row; /* Horizontal scroll */
+    white-space: nowrap;
+    align-items: flex-start;
+    height: auto;
+    gap: 16px;
+    padding: 0 16px; 
+}
+
+/* Native Swiper Styles override */
+swiper {
+    /* height set dynamically */
+    width: 100%;
+}
+
+swiper-item {
+    /* width: 100% implicitly */
+    box-sizing: border-box;
+    padding: 0 16px; /* Match padding */
+    overflow-y: visible; /* Allow content to flow? Swiper clips. */
+}
+
+/* Logic: We will likely use a container with dynamic height or adjust height via JS */
+
+.activity-card {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    background: transparent;
+    position: relative;
+    padding: 10px 0;
+    white-space: normal; /* Reset from scroll-view if used */
+}
+
+/* Stats Card */
+.stats-card {
+    background: var(--card-bg);
+    border-radius: 16px;
+    padding: 24px 20px 20px 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    border: 1px solid rgba(255,255,255,0.1); 
+    box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1);
+    margin-bottom: 0;
+    position: relative;
+    z-index: 10;
+}
+
+.stats-title {
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin: 0;
+    color: var(--text-primary);
+    width: 100%;
+    text-align: center;
+    display: block;
+}
+
+.stats-row {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    width: 100%;
+}
+
+/* Heatmap Container */
+.heatmap-container {
+    background: var(--card-bg);
+    border-radius: 16px;
+    padding: 24px 20px 20px 20px;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    width: 100%;
+    border: 1px solid rgba(255,255,255,0.1);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    margin-top: 0;
+    position: relative;
+    z-index: 5;
+    box-sizing: border-box;
+}
+
+/* "New Activity" Card Styling */
+.new-activity-card {
+    height: 400px; /* Fallback height */
+}
+
+.new-activity-inner {
+    width: 100%;
+    height: 100%;
+    min-height: 300px; /* Ensure some height */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 16px;
+    border: 2px dashed rgba(255,255,255,0.1);
+    transition: all 0.2s;
+}
+
+.new-activity-inner-hover {
+    background: rgba(255, 255, 255, 0.06);
+    transform: scale(0.98);
+}
+
+.add-button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    color: var(--text-secondary);
+}
+
+.add-button-icon {
+    width: 48px;
+    height: 48px;
+    /* stroke: var(--text-secondary); handled in image */
+}
+
+/* Stats Typography */
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--accent-color);
+    line-height: 1;
+    display: block;
+}
+
+.stat-label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+    display: block;
+}
+
+/* Cat Interaction */
+.cat-wrapper {
+    position: fixed;
+    bottom: 20%;
+    z-index: 200;
+    pointer-events: none;
+    width: 0;
+    height: 0;
+}
+
+.cat-character {
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    pointer-events: auto;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.cat-svg {
+    width: 80px;
+    height: 80px;
+}
+
+/* Positioning variants */
+.cat-wrapper.pos-left {
+    left: 0;
+}
+
+.cat-wrapper.pos-right {
+    right: 0;
+}
+
+.cat-wrapper.pos-left .cat-character {
+    left: -20px;
+    transform: rotate(15deg);
+}
+
+/* Hover effects are hard in touch, but active state works */
+
+.cat-wrapper.pos-right .cat-character {
+    right: -20px;
+    transform: scaleX(-1) rotate(15deg);
+}
+
+/* Fix mirrored text on right side */
+.cat-wrapper.pos-right .cat-hint {
+    transform: scaleX(-1);
+}
+
+/* Keyframes for Shake */
+@keyframes shake-cat {
+    0% { margin-left: 0; margin-top: 0; }
+    25% { margin-left: -5px; margin-top: 2px; }
+    50% { margin-left: 5px; margin-top: -2px; }
+    75% { margin-left: -5px; margin-top: 2px; }
+    100% { margin-left: 0; margin-top: 0; }
+}
+
+.shaking .cat-character {
+    animation: shake-cat 0.4s ease-in-out;
+}
+
+.cat-hint {
+    position: absolute;
+    top: -25px;
+    left: 10px;
+    background: white;
+    color: var(--bg-color);
+    padding: 4px 8px;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    opacity: 0;
+    white-space: nowrap;
+}
+
+.hint-visible {
+    opacity: 1;
+}
+
+/* Header styles */
+.heatmap-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.header-left {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+}
+
+.heatmap-header-h3 {
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin: 0;
+    display: block;
+}
+
+.view-toggles {
+    display: flex;
+    gap: 4px;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.05);
+    padding: 2px 8px;
+    border-radius: 12px;
+}
+
+.toggle-option {
+    transition: color 0.2s;
+}
+
+.toggle-option.active {
+    color: var(--accent-color);
+    font-weight: 600;
+}
+
+.toggle-divider {
+    opacity: 0.3;
+}
+
+.icon-button {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-secondary);
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    padding: 0; /* reset button padding */
+}
+
+/* Legend */
+.legend-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+}
+
+.legend-scale {
+    display: flex;
+    gap: 2px;
+}
+
+.legend-box {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+}
+
+/* Reuse global level-colors defined in app.wxss by var */
+
+/* Horizontal Scroll for Heatmap inside card */
+.heatmap-scroll {
+    display: flex;
+    flex-direction: row; /* WXSS flex */
+    overflow-x: auto;
+    /* gap: 16px; REMOVED for paging alignment */
+    padding-bottom: 12px;
+    /* scroll-snap-type: x mandatory; REMOVED */
+}
+
+.view-card {
+    min-width: 100%;
+    width: 100%; /* Explicit width */
+    box-sizing: border-box; /* Ensure padding is included in width */
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    padding-right: 16px; /* Simulates gap inside the page */
+    /* scroll-snap-align: center; REMOVED, rely on paging-enabled */
+}
+
+.view-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.view-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    padding-left: 4px;
+    display: block;
+}
+
+/* DAY VIEW */
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+    width: 100%;
+}
+
+.calendar-header {
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+    margin-bottom: 4px;
+    display: block;
+}
+
+.calendar-cell {
+    aspect-ratio: 1; /* Supported in newer WX, fallback needed? usually ok */
+    border-radius: 6px;
+    background-color: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05); /* Added border */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.calendar-cell.empty {
+    background-color: transparent;
+}
+
+.calendar-cell.prev-month {
+    opacity: 0.6;
+    border: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+/* Levels handled via style="{{...}}" or classes */
+
+/* MONTH VIEW */
+.month-grid {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 2px;
+    height: 100%;
+}
+
+.month-column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    min-width: 0;
+}
+
+.month-label {
+    font-size: 0.55rem;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+    width: 100%;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: clip;
+    display: block;
+}
+
+.week-cell {
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 3px;
+    background-color: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05); /* Added border */
+}
+
+.calendar-cell.selected {
+    border: 2px solid var(--accent-color) !important;
+    background-color: rgba(56, 189, 248, 0.2);
+    /* transform: scale(1.1); transform might cause layout issues in grid? */
+    z-index: 10;
+}
+
+/* Mini Legend */
+.mini-legend {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transform: scale(0.9);
+    transform-origin: right center;
+    opacity: 0.9;
+}
+
+.legend-label {
+    font-size: 0.65rem;
+    color: var(--text-secondary);
+    display: block;
+}
+
+.legend-box.level-0 { background-color: var(--level-0-v2); }
+.legend-box.level-1 { background-color: var(--level-1-v2); }
+.legend-box.level-2 { background-color: var(--level-2-v2); }
+.legend-box.level-3 { background-color: var(--level-3-v2); }
+.legend-box.level-4 { background-color: var(--level-4-v2); }
+
+/* Pagination */
+.swiper-pagination {
+    margin-top: 16px;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+}
+
+.swiper-pagination-bullet {
+    width: 8px;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.swiper-pagination-bullet-active {
+    background: var(--accent-color);
+    transform: scale(1.2);
+}
+
+/* Modal */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.8);
+    backdrop-filter: blur(4px); /* Might not work in basic WXSS, but okay to keep */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: var(--card-bg);
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 24px;
+    border-radius: 20px;
+    width: 90%;
+    max-width: 320px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+}
+
+.modal-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 16px;
+    text-align: center;
+    display: block;
+}
+
+.modal-input {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 12px 16px;
+    border-radius: 12px;
+    color: var(--text-primary);
+    font-size: 1rem;
+    margin-bottom: 20px;
+    height: 48px; /* Fixed height for input */
+}
+
+.modal-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.modal-btn {
+    flex: 1;
+    padding: 12px;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-btn-cancel {
+    background: transparent;
+    color: var(--text-secondary);
+}
+
+.modal-btn-confirm {
+    background: var(--accent-color);
+    color: #0f172a;
+}

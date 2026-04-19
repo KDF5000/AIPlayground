@@ -859,3 +859,42 @@ h1 {
 .modal-btn-confirm:hover {
     filter: brightness(1.1);
 }
+
+.modal-btn-danger {
+    background: #ef4444;
+    color: white;
+}
+
+.modal-btn-danger:hover {
+    background: #dc2626;
+}
+
+.modal-body-text {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.modal-body-text strong {
+    color: var(--text-primary);
+}
+
+/* Delete button inside stats-card */
+.delete-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 28px;
+    height: 28px;
+    opacity: 0.25;
+    border-color: transparent;
+}
+
+.delete-btn:hover {
+    opacity: 1;
+    color: #f87171;
+    border-color: rgba(248, 113, 113, 0.4);
+    background: rgba(248, 113, 113, 0.08);
+}

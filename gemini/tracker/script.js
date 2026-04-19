@@ -113,6 +113,11 @@ const addActivityModal = document.getElementById('add-activity-modal');
 const activityNameInput = document.getElementById('activity-name-input');
 const modalCancelBtn = document.getElementById('modal-cancel');
 const modalConfirmBtn = document.getElementById('modal-confirm');
+
+// Delete Modal Elements
+const deleteActivityModal = document.getElementById('delete-activity-modal');
+const deleteActivityNameEl = document.getElementById('delete-activity-name');
+let pendingDeleteId = null;
 // ... (existing code)
 
 
@@ -154,19 +159,55 @@ function init() {
 function setupModalListeners() {
     modalCancelBtn.addEventListener('click', closeModal);
     modalConfirmBtn.addEventListener('click', handleCreateActivity);
-
-    // Close on click outside (optional)
     addActivityModal.addEventListener('click', (e) => {
         if (e.target === addActivityModal) closeModal();
     });
-
-    // Enter key
     activityNameInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
             e.preventDefault();
             handleCreateActivity();
         }
     });
+
+    // Delete modal
+    document.getElementById('delete-modal-cancel').addEventListener('click', closeDeleteModal);
+    document.getElementById('delete-modal-confirm').addEventListener('click', handleDeleteActivity);
+    deleteActivityModal.addEventListener('click', (e) => {
+        if (e.target === deleteActivityModal) closeDeleteModal();
+    });
+}
+
+function openDeleteModal(activityId) {
+    if (activities.length <= 1) {
+        alert("You can't delete your only activity!");
+        return;
+    }
+    const activity = activities.find(a => a.id === activityId);
+    if (!activity) return;
+    pendingDeleteId = activityId;
+    deleteActivityNameEl.textContent = activity.name;
+    deleteActivityModal.classList.add('active');
+}
+
+function closeDeleteModal() {
+    deleteActivityModal.classList.remove('active');
+    pendingDeleteId = null;
+}
+
+function handleDeleteActivity() {
+    if (!pendingDeleteId) return;
+    const index = activities.findIndex(a => a.id === pendingDeleteId);
+    if (index === -1) return;
+
+    activities.splice(index, 1);
+
+    // Pick adjacent activity as current
+    const newIndex = Math.max(0, index - 1);
+    currentActivityId = activities[newIndex].id;
+
+    saveData();
+    closeDeleteModal();
+    renderActivities();
 }
 
 
@@ -212,6 +253,12 @@ function createActivityCard(activity) {
     stats.className = 'stats-card';
     stats.innerHTML = `
         <h3 class="stats-title">${activity.name}</h3>
+        <button class="icon-button delete-btn" title="Delete activity">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
+            </svg>
+        </button>
         <div class="stats-row">
             <div class="stat-item">
                 <span class="stat-value total-count">...</span>
@@ -223,6 +270,10 @@ function createActivityCard(activity) {
             </div>
         </div>
     `;
+    stats.querySelector('.delete-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        openDeleteModal(activity.id);
+    });
     card.appendChild(stats);
 
     // Heatmap Card

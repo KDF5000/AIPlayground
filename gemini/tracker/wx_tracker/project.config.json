@@ -1,0 +1,15 @@
+{
+  "miniprogramRoot": "./",
+  "projectname": "wx_tracker",
+  "description": "Sports Tracker Mini Program",
+  "setting": {
+    "urlCheck": false,
+    "es6": true,
+    "enhance": false,
+    "postcss": true,
+    "minified": true,
+    "minifyWXML": true,
+    "checkSiteMap": false
+  },
+  "compileType": "miniprogram"
+}
