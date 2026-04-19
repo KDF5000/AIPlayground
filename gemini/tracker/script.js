@@ -122,9 +122,58 @@ let pendingDeleteId = null;
 
 
 
+// Export / Import
+function exportData() {
+    const payload = JSON.stringify({ activities, currentActivityId }, null, 2);
+    const blob = new Blob([payload], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `tracker-backup-${dayjs().format('YYYYMMDD')}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+function setupImportExport() {
+    document.getElementById('export-btn').addEventListener('click', exportData);
+
+    document.getElementById('import-btn').addEventListener('click', () => {
+        document.getElementById('import-file-input').click();
+    });
+
+    document.getElementById('import-file-input').addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        e.target.value = ''; // reset so same file can be re-selected
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            try {
+                const parsed = JSON.parse(event.target.result);
+                if (!parsed.activities || !Array.isArray(parsed.activities)) {
+                    alert('Invalid backup file.');
+                    return;
+                }
+                if (activities.length > 0 && !confirm('This will replace all current data. Continue?')) {
+                    return;
+                }
+                activities = parsed.activities;
+                currentActivityId = parsed.currentActivityId || (activities[0] ? activities[0].id : null);
+                selectedDate = null;
+                saveData();
+                renderActivities();
+            } catch {
+                alert('Failed to read backup file.');
+            }
+        };
+        reader.readAsText(file);
+    });
+}
+
 // Initialization
 function init() {
     initCat();
+    setupImportExport();
 
     // Cat Interaction
     if (catCharacter) {
